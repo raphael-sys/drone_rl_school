@@ -6,11 +6,10 @@ import numpy as np
 class PointMassEnv(gym.Env):
     metadata = {'render.modes': ['human']}
     
-    def __init__(self, goal=(5,5,5), dt=0.1, max_steps=400):
+    def __init__(self, dt=0.05, max_steps=600):
         super().__init__()
         self.dt = dt
         self.max_steps = max_steps
-        self.goal = np.array(goal, dtype=np.float32)
 
         # State: x,y,z
         # Velocity: vx,vy,vz
@@ -27,9 +26,12 @@ class PointMassEnv(gym.Env):
         self.fig = None
         self.ax = None
 
-    def reset(self):
-        # Start at origin and with zero velocity
-        self.pos = np.zeros(3)
+    def reset(self, goal=(5,5,5)):
+        # Set the goal
+        self.goal = np.array(goal, dtype=np.float32)
+
+        # Start at a random point around the origin and with zero velocity
+        self.pos = self.goal + (np.random.rand(3) * 10 - 5)   # +5 to -5 from the goal in each dimension
         self.vel = np.zeros(3)
 
         # Reset the step count

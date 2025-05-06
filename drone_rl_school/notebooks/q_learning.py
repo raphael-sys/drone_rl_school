@@ -32,10 +32,13 @@ def simulate(agent, env, episodes=1):
     for ep in range(episodes):
         obs = env.reset()
         done = False
+        ep_reward = 0
         while not done:
             action = agent.choose_action(obs)
             obs, r, done, _ = env.step(action)
             env.render()
+            ep_reward += r
+        print(f'Simulated Episode    Total Reward: {ep_reward}')
         env.close()
 
 
@@ -44,7 +47,7 @@ if __name__ == '__main__':
     agent = QLearningAgent()
 
     # Train without visualization
-    train(agent, env, episodes=10_000, visualize=False)
+    train(agent, env, episodes=20_000, visualize=False)
 
     # Run a demo with visualization
     simulate(agent, env)
