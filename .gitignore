@@ -1,0 +1,11 @@
+# Ignore the venv
+.venv/*
+
+# Ignore the build files
+*.pyc
+
+# Ignore the package
+*.egg-info/*
+
+# Ignore VS-Code specific files
+.vscode/*
