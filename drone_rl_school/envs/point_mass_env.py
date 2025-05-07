@@ -26,6 +26,10 @@ class PointMassEnv(gym.Env):
         # Visualization setup
         self.fig = None
         self.ax3d = None
+        self.plot_3d_pos = None
+        self.plot_xy_pos = None
+        self.plot_yz_pos = None
+        self.plot_xz_pos = None
 
     def reset(self, goal=(5,5,5)):
         # Set the goal
@@ -85,64 +89,57 @@ class PointMassEnv(gym.Env):
             # 3D view
             self.ax3d = self.fig.add_subplot(gs[:, :3], projection='3d')
             self.ax3d.set_title('3D View')
+            self.ax3d.set_xlim(self.goal[0] - 10, self.goal[0] + 10)
+            self.ax3d.set_ylim(self.goal[1] - 10, self.goal[1] + 10)
+            self.ax3d.set_zlim(self.goal[2] - 10, self.goal[2] + 10)
+            self.ax3d.scatter(*self.goal, color='red', s=100, label='Goal')
+            self.plot_3d_pos = self.ax3d.scatter(*self.pos, color='blue', s=50, label='Drone')
+            self.ax3d.legend(loc='upper left')
             # XY plane
             self.ax_xy = self.fig.add_subplot(gs[0, 3])
             self.ax_xy.set_title('XY Projection')
+            self.ax_xy.set_xlim(self.goal[0] - 10, self.goal[0] + 10)
+            self.ax_xy.set_ylim(self.goal[1] - 10, self.goal[1] + 10)
+            self.ax_xy.scatter(self.goal[0], self.goal[1], color='red', s=80)
+            self.plot_xy_pos = self.ax_xy.scatter(self.pos[0], self.pos[1], color='blue', s=40)
+            self.ax_xy.xaxis.grid(); self.ax_xy.yaxis.grid()
+            self.ax_xy.set_xlabel('X'); self.ax_xy.set_ylabel('Y')
             # XZ plane
             self.ax_xz = self.fig.add_subplot(gs[1, 3])
             self.ax_xz.set_title('XZ Projection')
+            self.ax_xz.set_xlim(self.goal[0] - 10, self.goal[0] + 10)
+            self.ax_xz.set_ylim(self.goal[2] - 10, self.goal[2] + 10)
+            self.ax_xz.scatter(self.goal[0], self.goal[2], color='red', s=80)
+            self.plot_xz_pos = self.ax_xz.scatter(self.pos[0], self.pos[2], color='blue', s=40)
+            self.ax_xz.xaxis.grid(); self.ax_xz.yaxis.grid()
+            self.ax_xz.set_xlabel('X'); self.ax_xz.set_ylabel('Z')
             # YZ plane
             self.ax_yz = self.fig.add_subplot(gs[2, 3])
             self.ax_yz.set_title('YZ Projection')
+            self.ax_yz.set_xlim(self.goal[1] - 10, self.goal[1] + 10)
+            self.ax_yz.set_ylim(self.goal[2] - 10, self.goal[2] + 10)
+            self.ax_yz.scatter(self.goal[1], self.goal[2], color='red', s=80)
+            self.plot_yz_pos = self.ax_yz.scatter(self.pos[1], self.pos[2], color='blue', s=40)
+            self.ax_yz.xaxis.grid();self.ax_yz.yaxis.grid()
+            self.ax_yz.set_xlabel('Y'); self.ax_yz.set_ylabel('Z')
 
             plt.tight_layout()
             plt.ion()
 
-        # ---- 3D axis ----
-        ax = self.ax3d
-        ax.cla()
-        ax.set_xlim(self.goal[0] - 10, self.goal[0] + 10)
-        ax.set_ylim(self.goal[1] - 10, self.goal[1] + 10)
-        ax.set_zlim(self.goal[2] - 10, self.goal[2] + 10)
-        ax.scatter(*self.goal, color='red', s=100, label='Goal')
-        ax.scatter(*self.pos, color='blue', s=50, label='Drone')
-        ax.legend(loc='upper left')
+        # 3D axis
+        self.plot_3d_pos._offsets3d = ([self.pos[0]], [self.pos[1]], [self.pos[2]])
         dist = np.linalg.norm(self.goal - self.pos)
-        ax.set_title(f'3D  |  Step {self.steps:03d}  |  Dist {dist:.2f}')
+        self.ax3d.set_title(f'3D  |  Step {self.steps:03d}  |  Dist {dist:.2f}')
 
-        # ---- XY projection ----
-        ax = self.ax_xy
-        ax.cla()
-        ax.set_xlim(self.goal[0] - 10, self.goal[0] + 10)
-        ax.set_ylim(self.goal[1] - 10, self.goal[1] + 10)
-        ax.scatter(self.goal[0], self.goal[1], color='red', s=80)
-        ax.scatter(self.pos[0], self.pos[1], color='blue', s=40)
-        ax.xaxis.grid(); ax.yaxis.grid()
-        ax.set_title('XY view')
-        ax.set_xlabel('X'); ax.set_ylabel('Y')
+        # XY projection
+        self.plot_xy_pos.set_offsets([self.pos[0], self.pos[1]])
 
-        # ---- XZ projection ----
-        ax = self.ax_xz
-        ax.cla()
-        ax.set_xlim(self.goal[0] - 10, self.goal[0] + 10)
-        ax.set_ylim(self.goal[2] - 10, self.goal[2] + 10)
-        ax.scatter(self.goal[0], self.goal[2], color='red', s=80)
-        ax.scatter(self.pos[0], self.pos[2], color='blue', s=40)
-        ax.xaxis.grid(); ax.yaxis.grid()
-        ax.set_title('XZ view')
-        ax.set_xlabel('X'); ax.set_ylabel('Z')
+        # XZ projection
+        self.plot_xz_pos.set_offsets([self.pos[0], self.pos[2]])
 
-        # ---- YZ projection ----
-        ax = self.ax_yz
-        ax.cla()
-        ax.set_xlim(self.goal[1] - 10, self.goal[1] + 10)
-        ax.set_ylim(self.goal[2] - 10, self.goal[2] + 10)
-        ax.scatter(self.goal[1], self.goal[2], color='red', s=80)
-        ax.scatter(self.pos[1], self.pos[2], color='blue', s=40)
-        ax.xaxis.grid(); ax.yaxis.grid()
-        ax.set_title('YZ view')
-        ax.set_xlabel('Y'); ax.set_ylabel('Z')
+        # YZ projection
+        self.plot_yz_pos.set_offsets([self.pos[1], self.pos[2]])
 
-        # redraw
+        # Redraw
         plt.draw()
-        plt.pause(0.001)
+        plt.pause(0.01)
