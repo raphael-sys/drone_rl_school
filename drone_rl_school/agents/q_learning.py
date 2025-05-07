@@ -4,12 +4,18 @@ class QLearningAgent:
     def __init__(self, vel_bins=4, delta_bins=4, 
                  alpha=1.0, epsilon=1.0, gamma=0.99,
                  alpha_min=0.01, epsilon_min=0.05,
-                 alpha_decay=0.9999, epsilon_decay=0.9995):
+                 alpha_decay=0.9, epsilon_decay=0.9999):
         # The number of bins per dimension
         self.vel_bins = vel_bins
         self.delta_bins = delta_bins
 
-        self.alpha = alpha  # learning rate
+                # Define action space: 0:+x, 1:-x, 2:+y, 3:-y, 4:+z, 5:-z
+        self.num_actions = 6
+
+        # Learning hyperparameters
+        self.alpha = np.full((self.vel_bins, self.vel_bins, self.vel_bins, 
+                                 self.delta_bins, self.delta_bins, self.delta_bins, 
+                                 self.num_actions), alpha)  # learning rate for each state
         self.gamma = gamma  # discount factor
         self.epsilon = epsilon  # exploration factor
         self.alpha_min = alpha_min
@@ -17,23 +23,23 @@ class QLearningAgent:
         self.alpha_decay = alpha_decay
         self.epsilon_decay = epsilon_decay
 
-        # Define action space: 0:+x, 1:-x, 2:+y, 3:-y, 4:+z, 5:-z
-        self.num_actions = 6
-
         # Q-table: (vel_x, vel_y, vel_z, delta_x, delta_y, delta_z, action) → Q-value
         self.q_table = np.zeros((self.vel_bins, self.vel_bins, self.vel_bins, 
                                  self.delta_bins, self.delta_bins, self.delta_bins, 
                                  self.num_actions))
 
+        self.visit_count = np.zeros((self.vel_bins, self.vel_bins, self.vel_bins, 
+                                 self.delta_bins, self.delta_bins, self.delta_bins, 
+                                 self.num_actions))
+        
 
     def decay_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
-        # print(f'New exploration rate: {self.epsilon}')
 
 
     def decay_alpha(self):
-        self.alpha = max(self.alpha_min, self.alpha * self.alpha_decay)
-        # print(f'New learning rate: {self.alpha}')
+        adapted_decay_rate = np.power(self.alpha_decay, self.visit_count / np.sum(self.visit_count))
+        self.alpha = np.maximum(self.alpha_min, self.alpha * adapted_decay_rate)
 
 
     def discretize_state(self, state):
@@ -62,4 +68,10 @@ class QLearningAgent:
 
         # Q-learning update rule
         self.q_table[*discretized_state, action] = \
-            current_q + self.alpha * (reward + self.gamma * max_next_q - current_q)
+            current_q + self.alpha[*discretized_state, action] * (reward + self.gamma * max_next_q - current_q)
+
+        # Count the visit
+        self.visit_count[*discretized_state, action] += 1
+
+        # Alternatively: Decay alpha after each visit
+        self.alpha[*discretized_state, action] *= self.alpha_decay

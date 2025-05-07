@@ -22,7 +22,7 @@ def train(agent, env, episodes, visualize=False):
 
         # Decay after each episode
         agent.decay_epsilon()
-        agent.decay_alpha()
+        # agent.decay_alpha()
 
         # Print on training overview
         if (ep+1) % 200 == 0:
@@ -33,6 +33,8 @@ def train(agent, env, episodes, visualize=False):
 
 def simulate(agent, env, episodes=1):
     for ep in range(episodes):
+        print(f'Current learning rate (mean): {np.mean(agent.alpha)}')
+        print(f'Current exploration rate: {agent.epsilon}')
         obs = env.reset()
         done = False
         ep_reward = 0
@@ -54,7 +56,7 @@ if __name__ == '__main__':
 
     while True:
         # Train without visualization
-        rewards = train(agent, env, episodes=2_000, visualize=False)
+        rewards = train(agent, env, episodes=1_000, visualize=False)
 
         # Plot the rewards over time
         plt.figure()
