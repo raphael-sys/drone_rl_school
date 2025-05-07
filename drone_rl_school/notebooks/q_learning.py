@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def train(agent, env, episodes, visualize=False):
+def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individual_decay, visualize=False):
     rewards = []
     for ep in range(episodes):
         obs = env.reset()
@@ -13,16 +13,17 @@ def train(agent, env, episodes, visualize=False):
         while not done:
             action = agent.choose_action(obs)
             next_obs, r, done, _ = env.step(action)
-            agent.update(obs, action, r, next_obs)
+            agent.update(obs, action, r, next_obs, alpha_individual_decay)
             obs = next_obs
             ep_reward += r
             if visualize:
                 env.render()
         rewards.append(ep_reward)
 
-        # Decay after each episode
-        agent.decay_epsilon()
-        # agent.decay_alpha()
+        if epsilon_decay:
+            agent.decay_epsilon()
+        if alpha_global_decay:
+            agent.decay_alpha()
 
         # Print on training overview
         if (ep+1) % 200 == 0:
@@ -43,6 +44,10 @@ def simulate(agent, env, episodes=1):
             obs, r, done, _ = env.step(action)
             env.render()
             ep_reward += r
+            # End simulation on 'q' key press
+            if env.stop_animation:
+                env.stop_animation = False
+                break
         plt.close(env.fig)
         env.fig = None
         env.ax = None
@@ -56,7 +61,14 @@ if __name__ == '__main__':
 
     while True:
         # Train without visualization
-        rewards = train(agent, env, episodes=1_00, visualize=False)
+        episodes = 2_000
+        
+        epsilon_decay = True
+        alpha_global_decay = False
+        alpha_individual_decay = False
+
+        rewards = train(agent, env, episodes,
+                        epsilon_decay, alpha_global_decay, alpha_individual_decay)
 
         # Plot the rewards over time
         plt.figure()
@@ -64,6 +76,9 @@ if __name__ == '__main__':
         plt.xlabel('Episode')
         plt.ylabel('Total Reward')
         plt.title('3D Q‑Learning: Reward per Episode')
+        plt.grid()
+        plt.tight_layout()
         plt.show()
+
         # Run a demo with visualization
         simulate(agent, env)

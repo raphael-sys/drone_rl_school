@@ -1,10 +1,10 @@
 import numpy as np
 
 class QLearningAgent:
-    def __init__(self, vel_bins=4, delta_bins=4, 
-                 alpha=1.0, epsilon=1.0, gamma=0.99,
+    def __init__(self, vel_bins=10, delta_bins=10, 
+                 alpha=0.2, epsilon=1.0, gamma=0.99,
                  alpha_min=0.01, epsilon_min=0.05,
-                 alpha_decay=0.9, epsilon_decay=0.99995):
+                 alpha_decay=0.999, epsilon_decay=0.9999):
         # The number of bins per dimension
         self.vel_bins = vel_bins
         self.delta_bins = delta_bins
@@ -59,7 +59,7 @@ class QLearningAgent:
         discretized_state = self.discretize_state(state)
         return np.argmax(self.q_table[*discretized_state, :])
 
-    def update(self, state, action, reward, next_state):
+    def update(self, state, action, reward, next_state, alpha_individual_decay):
         discretized_state = self.discretize_state(state)
         discretized_next_state = self.discretize_state(next_state)
 
@@ -73,5 +73,6 @@ class QLearningAgent:
         # Count the visit
         self.visit_count[*discretized_state, action] += 1
 
-        # Alternatively: Decay alpha after each visit
-        self.alpha[*discretized_state, action] *= self.alpha_decay
+        # Decay alpha after each visit
+        if alpha_individual_decay:
+            self.alpha[*discretized_state, action] *= self.alpha_decay

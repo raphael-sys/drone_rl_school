@@ -30,6 +30,13 @@ class PointMassEnv(gym.Env):
         self.plot_xy_pos = None
         self.plot_yz_pos = None
         self.plot_xz_pos = None
+        self.stop_animation = False
+
+
+    def on_key_press(self, event):
+        if event.key == 'q':
+            self.stop_animation = True
+
 
     def reset(self, goal=(5,5,5)):
         # Set the goal
@@ -82,6 +89,7 @@ class PointMassEnv(gym.Env):
         # Initialize plot
         if self.fig is None or self.ax3d is None:
             self.fig = plt.figure(figsize=(12, 8))
+            self.fig.canvas.mpl_connect('key_press_event', self.on_key_press)
             
             # Define grid: 3 rows × 4 columns
             gs = gridspec.GridSpec(3, 4, width_ratios=[3, 1, 1, 1], height_ratios=[1, 1, 1])
