@@ -14,7 +14,7 @@ class QLearningAgent:
         # Define action space: 0:+x, 1:-x, 2:+y, 3:-y, 4:+z, 5:-z
         self.num_actions = 6
 
-        # Q-table: (pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, action) → Q-value
+        # Q-table: (pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, delta_x, delta_y, delta_z, action) → Q-value
         self.q_table = np.zeros((self.pos_bins, self.pos_bins, self.pos_bins, 
                                  self.vel_bins, self.vel_bins, self.vel_bins, 
                                  self.delta_bins, self.delta_bins, self.delta_bins, 

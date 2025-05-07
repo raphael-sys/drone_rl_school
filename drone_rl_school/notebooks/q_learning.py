@@ -47,7 +47,7 @@ if __name__ == '__main__':
     agent = QLearningAgent()
 
     # Train without visualization
-    train(agent, env, episodes=20_000, visualize=False)
+    train(agent, env, episodes=100_000, visualize=False)
 
     # Run a demo with visualization
     simulate(agent, env)

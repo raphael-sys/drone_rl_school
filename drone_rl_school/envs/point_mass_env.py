@@ -55,7 +55,7 @@ class PointMassEnv(gym.Env):
         self.pos += self.vel * self.dt
         self.steps += 1
 
-        # Set the reward
+        # Calculate the reward
         dist = np.linalg.norm(self.goal - self.pos)
         reward = -np.sqrt(dist) - 0.1 * np.linalg.norm(self.vel)
 
