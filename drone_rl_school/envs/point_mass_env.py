@@ -6,7 +6,7 @@ import numpy as np
 class PointMassEnv(gym.Env):
     metadata = {'render.modes': ['human']}
     
-    def __init__(self, dt=0.05, max_steps=600):
+    def __init__(self, dt=0.1, max_steps=200):
         super().__init__()
         self.dt = dt
         self.max_steps = max_steps
@@ -40,8 +40,8 @@ class PointMassEnv(gym.Env):
         return self._get_obs()
 
     def _get_obs(self):
-        delta = self.goal - self.pos
-        return np.concatenate([self.pos, self.vel, delta]).astype(np.float32)
+        pos_delta = self.goal - self.pos
+        return np.concatenate([self.vel, pos_delta]).astype(np.float32)
 
     def step(self, action):
         # Get the acceleration from the selected action
@@ -57,10 +57,20 @@ class PointMassEnv(gym.Env):
 
         # Calculate the reward
         dist = np.linalg.norm(self.goal - self.pos)
-        reward = -np.sqrt(dist) - 0.1 * np.linalg.norm(self.vel)
+        reward = -dist   # -dist**2 # - 0.1 * np.linalg.norm(self.vel)
 
         # End if goal is approximately reached or too many steps
-        done = dist < 0.2 or self.steps >= self.max_steps
+        if dist < 0.2:   # Calculated to abort if distance is smaller than [0.1, 0.1, 0.1]
+            reward = 10_000
+            done = True
+        elif dist > 18:   # Calculated to abort if distance is larger than [10, 10, 10]
+            reward = -10_000
+            done = True            
+        elif self.steps >= self.max_steps:
+            done = True
+        else:
+            done = False
+
         return self._get_obs(), reward, done, {}
 
     def render(self, mode='human'):
@@ -68,9 +78,9 @@ class PointMassEnv(gym.Env):
         if self.fig is None or self.ax is None:
             self.fig = plt.figure()
             self.ax = self.fig.add_subplot(111, projection='3d')
-            self.ax.set_xlim(-1, 6)
-            self.ax.set_ylim(-1, 6)
-            self.ax.set_zlim(-1, 6)
+            self.ax.set_xlim(self.goal[0] - 10, self.goal[0] + 10)
+            self.ax.set_ylim(self.goal[1] - 10, self.goal[1] + 10)
+            self.ax.set_zlim(self.goal[2] - 10, self.goal[2] + 10)
             self.ax.set_xlabel('X')
             self.ax.set_ylabel('Y')
             self.ax.set_zlabel('Z')
@@ -78,12 +88,12 @@ class PointMassEnv(gym.Env):
 
         # Clear and redraw
         self.ax.cla()
-        self.ax.set_xlim(-1, 6)
-        self.ax.set_ylim(-1, 6)
-        self.ax.set_zlim(-1, 6)
+        self.ax.set_xlim(self.goal[0] - 10, self.goal[0] + 10)
+        self.ax.set_ylim(self.goal[1] - 10, self.goal[1] + 10)
+        self.ax.set_zlim(self.goal[2] - 10, self.goal[2] + 10)
         self.ax.scatter(*self.goal, color='red', s=100, label='Goal')
         self.ax.scatter(*self.pos, color='blue', s=50, label='Drone')
         self.ax.legend(loc='upper left')
-        self.ax.set_title(f'Step {self.steps}')
+        self.ax.set_title(f'Step {self.steps} - Distance: {np.linalg.norm(self.goal - self.pos):.2f}')
         plt.draw()
         plt.pause(0.05)

@@ -1,9 +1,8 @@
 import numpy as np
 
 class QLearningAgent:
-    def __init__(self, pos_bins=2, vel_bins=2, delta_bins=4, alpha=0.05, gamma=0.99, epsilon=0.2):
+    def __init__(self, vel_bins=4, delta_bins=4, alpha=0.1, gamma=0.99, epsilon=0.1):
         # The number of bins per dimension
-        self.pos_bins = pos_bins
         self.vel_bins = vel_bins
         self.delta_bins = delta_bins
 
@@ -14,9 +13,8 @@ class QLearningAgent:
         # Define action space: 0:+x, 1:-x, 2:+y, 3:-y, 4:+z, 5:-z
         self.num_actions = 6
 
-        # Q-table: (pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, delta_x, delta_y, delta_z, action) → Q-value
-        self.q_table = np.zeros((self.pos_bins, self.pos_bins, self.pos_bins, 
-                                 self.vel_bins, self.vel_bins, self.vel_bins, 
+        # Q-table: (vel_x, vel_y, vel_z, delta_x, delta_y, delta_z, action) → Q-value
+        self.q_table = np.zeros((self.vel_bins, self.vel_bins, self.vel_bins, 
                                  self.delta_bins, self.delta_bins, self.delta_bins, 
                                  self.num_actions))
 
@@ -25,7 +23,7 @@ class QLearningAgent:
         def to_bin(val, bins):
             return int(np.clip((val + 10) / 20 * bins, 0, bins - 1))
 
-        return [to_bin(s, self.pos_bins) for s in state]
+        return [to_bin(s, bin_count) for s, bin_count in zip(state, [self.vel_bins] * 3 + [self.delta_bins] * 3)]
 
 
     def choose_action(self, state):

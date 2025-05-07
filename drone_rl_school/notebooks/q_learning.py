@@ -1,5 +1,6 @@
 from drone_rl_school.envs.point_mass_env import PointMassEnv
 from drone_rl_school.agents.q_learning import QLearningAgent
+import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -19,14 +20,9 @@ def train(agent, env, episodes, visualize=False):
                 env.render()
         rewards.append(ep_reward)
         if (ep+1) % 200 == 0:
-            print(f"Episode {ep+1}\tTotal Reward: {ep_reward:.2f}")
+            print(f"Episode {ep+1-200} to {ep+1} \tMedian Reward: {np.median(rewards[-200:]):.2f}")
 
-    # Plot the rewards over time
-    plt.plot(rewards)
-    plt.xlabel('Episode')
-    plt.ylabel('Total Reward')
-    plt.title('3D Q‑Learning: Reward per Episode')
-    plt.show()
+    return rewards
 
 def simulate(agent, env, episodes=1):
     for ep in range(episodes):
@@ -38,16 +34,27 @@ def simulate(agent, env, episodes=1):
             obs, r, done, _ = env.step(action)
             env.render()
             ep_reward += r
+        plt.close(env.fig)
+        env.fig = None
+        env.ax = None
+        plt.ioff()
         print(f'Simulated Episode    Total Reward: {ep_reward}')
-        env.close()
 
 
 if __name__ == '__main__':
     env = PointMassEnv()
     agent = QLearningAgent()
 
-    # Train without visualization
-    train(agent, env, episodes=100_000, visualize=False)
+    while True:
+        # Train without visualization
+        rewards = train(agent, env, episodes=10_000, visualize=False)
 
-    # Run a demo with visualization
-    simulate(agent, env)
+        # Plot the rewards over time
+        plt.figure()
+        plt.plot(rewards)
+        plt.xlabel('Episode')
+        plt.ylabel('Total Reward')
+        plt.title('3D Q‑Learning: Reward per Episode')
+        plt.show()
+        # Run a demo with visualization
+        simulate(agent, env)
