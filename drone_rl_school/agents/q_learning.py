@@ -4,12 +4,12 @@ class QLearningAgent:
     def __init__(self, vel_bins=4, delta_bins=4, 
                  alpha=1.0, epsilon=1.0, gamma=0.99,
                  alpha_min=0.01, epsilon_min=0.05,
-                 alpha_decay=0.9, epsilon_decay=0.9999):
+                 alpha_decay=0.9, epsilon_decay=0.99995):
         # The number of bins per dimension
         self.vel_bins = vel_bins
         self.delta_bins = delta_bins
 
-                # Define action space: 0:+x, 1:-x, 2:+y, 3:-y, 4:+z, 5:-z
+        # Define action space: 0:+x, 1:-x, 2:+y, 3:-y, 4:+z, 5:-z
         self.num_actions = 6
 
         # Learning hyperparameters

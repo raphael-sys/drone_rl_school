@@ -28,8 +28,8 @@ def train(agent, env, episodes, visualize=False):
         if (ep+1) % 200 == 0:
             print(f"Episode {ep+1-200} to {ep+1} \tMedian Reward: {np.median(rewards[-200:]):.2f}")
 
-
     return rewards
+
 
 def simulate(agent, env, episodes=1):
     for ep in range(episodes):
@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
     while True:
         # Train without visualization
-        rewards = train(agent, env, episodes=1_000, visualize=False)
+        rewards = train(agent, env, episodes=1_00, visualize=False)
 
         # Plot the rewards over time
         plt.figure()
