@@ -6,7 +6,7 @@ import numpy as np
 class PointMassEnv(gym.Env):
     metadata = {'render.modes': ['human']}
     
-    def __init__(self, dt=0.1, max_steps=200):
+    def __init__(self, dt=0.1, max_steps=400):
         super().__init__()
         self.dt = dt
         self.max_steps = max_steps

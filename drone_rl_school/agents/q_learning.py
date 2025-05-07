@@ -1,7 +1,7 @@
 import numpy as np
 
 class QLearningAgent:
-    def __init__(self, vel_bins=4, delta_bins=4, alpha=0.1, gamma=0.99, epsilon=0.1):
+    def __init__(self, vel_bins=4, delta_bins=4, alpha=0.01, gamma=0.99, epsilon=0.1):
         # The number of bins per dimension
         self.vel_bins = vel_bins
         self.delta_bins = delta_bins
