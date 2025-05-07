@@ -19,8 +19,15 @@ def train(agent, env, episodes, visualize=False):
             if visualize:
                 env.render()
         rewards.append(ep_reward)
+
+        # Decay after each episode
+        agent.decay_epsilon()
+        agent.decay_alpha()
+
+        # Print on training overview
         if (ep+1) % 200 == 0:
             print(f"Episode {ep+1-200} to {ep+1} \tMedian Reward: {np.median(rewards[-200:]):.2f}")
+
 
     return rewards
 
@@ -47,7 +54,7 @@ if __name__ == '__main__':
 
     while True:
         # Train without visualization
-        rewards = train(agent, env, episodes=10_000, visualize=False)
+        rewards = train(agent, env, episodes=2_000, visualize=False)
 
         # Plot the rewards over time
         plt.figure()
