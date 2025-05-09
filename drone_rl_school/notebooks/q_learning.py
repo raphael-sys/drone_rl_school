@@ -6,9 +6,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individual_decay, 
-          writer, visualize=False):
+          writer, start_episode=0, visualize=False):
     rewards = []
-    for episode in range(episodes):
+    for episode in range(start_episode, start_episode + episodes):
         obs = env.reset()
         ep_reward = 0
         done = False
@@ -31,13 +31,13 @@ def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individ
         if epsilon_decay:
             agent.decay_epsilon(episode)
         if alpha_global_decay:
-            agent.decay_alpha()
+            agent.decay_global_alpha(episode)
 
         # Print on training overview
         if (episode+1) % 200 == 0:
             print(f"Episode {episode+1-200} to {episode+1} \tMedian Reward: {np.median(rewards[-200:]):.2f}")
 
-    return rewards
+    return episodes, rewards
 
 
 def simulate(agent, env, episodes=1):
@@ -68,17 +68,19 @@ if __name__ == '__main__':
     agent = QLearningAgent()
     writer = SummaryWriter()    # bash: tensorboard --logdir=runs, http://localhost:6006
 
+    episodes_trained = 0
     while True:
         # Train without visualization
-        episodes = 40_000
+        episodes = 6_000
         
         epsilon_decay = True
-        alpha_global_decay = False
+        alpha_global_decay = True
         alpha_individual_decay = False
 
-        rewards = train(agent, env, episodes,
+        ep_count, rewards = train(agent, env, episodes,
                         epsilon_decay, alpha_global_decay, alpha_individual_decay, 
-                        writer)
+                        writer, start_episode=episodes_trained)
+        episodes_trained += ep_count
 
         # Plot the rewards over time
         plt.figure()

@@ -1,10 +1,10 @@
 import numpy as np
 
 class QLearningAgent:
-    def __init__(self, vel_bins=4, delta_bins=16, 
-                 alpha=0.2, epsilon=1.0, gamma=0.99,
+    def __init__(self, vel_bins=4, delta_bins=12, 
+                 alpha=0.9, epsilon=1.0, gamma=0.99,
                  alpha_min=0.01, epsilon_min=0.05,
-                 alpha_decay=0.999, epsilon_decay=0.9997):
+                 alpha_decay=0.9995, epsilon_decay=0.9997):
         # The number of bins per dimension
         self.vel_bins = vel_bins
         self.delta_bins = delta_bins
@@ -14,9 +14,10 @@ class QLearningAgent:
 
         # Learning hyperparameters
         self.alpha_0 = alpha
-        self.alpha = np.full((self.vel_bins, self.vel_bins, self.vel_bins, 
-                                 self.delta_bins, self.delta_bins, self.delta_bins, 
-                                 self.num_actions), alpha)  # learning rate for each state
+        # self.alpha = np.full((self.vel_bins, self.vel_bins, self.vel_bins, 
+        #                          self.delta_bins, self.delta_bins, self.delta_bins, 
+        #                          self.num_actions), alpha)  # learning rate for each state
+        self.alpha = alpha
         self.gamma = gamma  # discount factor
         self.epsilon_0 = epsilon  # exploration factor
         self.epsilon = epsilon
@@ -44,6 +45,10 @@ class QLearningAgent:
         self.alpha = np.maximum(self.alpha_min, self.alpha_0 * adapted_decay_rate)
 
 
+    def decay_global_alpha(self, episodes):
+        self.alpha = np.maximum(self.alpha_min, self.alpha_0 * self.alpha_decay ** episodes)
+
+
     def discretize_state(self, state):
         # Assuming all values range from -10 to 10, map them into [0, bins-1]
         def to_bin(val, bins):
@@ -69,8 +74,10 @@ class QLearningAgent:
         max_next_q = np.max(self.q_table[*discretized_next_state])
 
         # Q-learning update rule
+        # self.q_table[*discretized_state, action] = \
+        #     current_q + self.alpha[*discretized_state, action] * (reward + self.gamma * max_next_q - current_q)
         self.q_table[*discretized_state, action] = \
-            current_q + self.alpha[*discretized_state, action] * (reward + self.gamma * max_next_q - current_q)
+            current_q + self.alpha * (reward + self.gamma * max_next_q - current_q)
 
         # Count the visit
         self.visit_count[*discretized_state, action] += 1
