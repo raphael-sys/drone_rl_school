@@ -4,7 +4,7 @@ class QLearningAgent:
     def __init__(self, vel_bins=4, delta_bins=12, 
                  alpha=0.9, epsilon=1.0, gamma=0.99,
                  alpha_min=0.01, epsilon_min=0.05,
-                 alpha_decay=0.9995, epsilon_decay=0.9997):
+                 alpha_decay=0.9995, epsilon_decay=0.9998):
         # The number of bins per dimension
         self.vel_bins = vel_bins
         self.delta_bins = delta_bins

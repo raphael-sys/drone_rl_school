@@ -71,7 +71,7 @@ if __name__ == '__main__':
     episodes_trained = 0
     while True:
         # Train without visualization
-        episodes = 6_000
+        episodes = 10_000
         
         epsilon_decay = True
         alpha_global_decay = True
