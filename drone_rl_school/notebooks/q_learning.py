@@ -2,11 +2,13 @@ from drone_rl_school.envs.point_mass_env import PointMassEnv
 from drone_rl_school.agents.q_learning import QLearningAgent
 import numpy as np
 import matplotlib.pyplot as plt
+from torch.utils.tensorboard import SummaryWriter
 
 
-def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individual_decay, visualize=False):
+def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individual_decay, 
+          writer, visualize=False):
     rewards = []
-    for ep in range(episodes):
+    for episode in range(episodes):
         obs = env.reset()
         ep_reward = 0
         done = False
@@ -20,14 +22,20 @@ def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individ
                 env.render()
         rewards.append(ep_reward)
 
+        # Log values
+        writer.add_scalar('reward', ep_reward, episode)
+        writer.add_scalar('alpha_median', np.median(agent.alpha), episode)
+        writer.add_scalar('alpha_mean', np.mean(agent.alpha), episode)
+        writer.add_scalar('epsilon', agent.epsilon, episode)
+
         if epsilon_decay:
-            agent.decay_epsilon()
+            agent.decay_epsilon(episode)
         if alpha_global_decay:
             agent.decay_alpha()
 
         # Print on training overview
-        if (ep+1) % 200 == 0:
-            print(f"Episode {ep+1-200} to {ep+1} \tMedian Reward: {np.median(rewards[-200:]):.2f}")
+        if (episode+1) % 200 == 0:
+            print(f"Episode {episode+1-200} to {episode+1} \tMedian Reward: {np.median(rewards[-200:]):.2f}")
 
     return rewards
 
@@ -58,17 +66,19 @@ def simulate(agent, env, episodes=1):
 if __name__ == '__main__':
     env = PointMassEnv()
     agent = QLearningAgent()
+    writer = SummaryWriter()    # bash: tensorboard --logdir=runs, http://localhost:6006
 
     while True:
         # Train without visualization
-        episodes = 2_000
+        episodes = 40_000
         
         epsilon_decay = True
         alpha_global_decay = False
         alpha_individual_decay = False
 
         rewards = train(agent, env, episodes,
-                        epsilon_decay, alpha_global_decay, alpha_individual_decay)
+                        epsilon_decay, alpha_global_decay, alpha_individual_decay, 
+                        writer)
 
         # Plot the rewards over time
         plt.figure()
