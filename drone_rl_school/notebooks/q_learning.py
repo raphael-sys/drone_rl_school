@@ -71,17 +71,17 @@ def simulate(agent, env, episodes=1):
 
 if __name__ == '__main__':
     env = PointMassEnv()
-    agent = QLearningAgent()
+    agent = QLearningAgent(alpha_per_state=False)
     writer = SummaryWriter()    # bash: tensorboard --logdir=runs, http://localhost:6006
 
     episodes_trained = 0
     while True:
         # Train without visualization
-        episodes = 10_000
+        episodes = 5_000
         
         epsilon_decay = True
-        alpha_global_decay = False
-        alpha_individual_decay = True
+        alpha_global_decay = True
+        alpha_individual_decay = False
 
         ep_count, rewards = train(agent, env, episodes,
                         epsilon_decay, alpha_global_decay, alpha_individual_decay, 
