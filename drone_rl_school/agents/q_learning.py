@@ -4,7 +4,8 @@ class QLearningAgent:
     def __init__(self, vel_bins=4, delta_bins=12, 
                  alpha=0.9, epsilon=1.0, gamma=0.99,
                  alpha_min=0.01, epsilon_min=0.05,
-                 alpha_decay=0.9995, epsilon_decay=0.9998):
+                 alpha_decay=0.3, epsilon_decay=0.9999,
+                 alpha_per_state=True):
         # The number of bins per dimension
         self.vel_bins = vel_bins
         self.delta_bins = delta_bins
@@ -14,10 +15,13 @@ class QLearningAgent:
 
         # Learning hyperparameters
         self.alpha_0 = alpha
-        # self.alpha = np.full((self.vel_bins, self.vel_bins, self.vel_bins, 
-        #                          self.delta_bins, self.delta_bins, self.delta_bins, 
-        #                          self.num_actions), alpha)  # learning rate for each state
-        self.alpha = alpha
+        self.alpha_per_state = alpha_per_state
+        if self.alpha_per_state:
+            self.alpha = np.full((self.vel_bins, self.vel_bins, self.vel_bins, 
+                                    self.delta_bins, self.delta_bins, self.delta_bins, 
+                                    self.num_actions), alpha)  # learning rate for each state action pair
+        else:
+            self.alpha = alpha    # one global learning rate
         self.gamma = gamma  # discount factor
         self.epsilon_0 = epsilon  # exploration factor
         self.epsilon = epsilon
@@ -40,8 +44,8 @@ class QLearningAgent:
         self.epsilon = max(self.epsilon_min, self.epsilon_0 * self.epsilon_decay ** episodes)
 
 
-    def decay_alpha(self):
-        adapted_decay_rate = np.power(self.alpha_decay, self.visit_count / np.sum(self.visit_count))
+    def decay_individual_alpha(self):
+        adapted_decay_rate = np.power(self.alpha_0, self.visit_count)
         self.alpha = np.maximum(self.alpha_min, self.alpha_0 * adapted_decay_rate)
 
 
@@ -74,14 +78,12 @@ class QLearningAgent:
         max_next_q = np.max(self.q_table[*discretized_next_state])
 
         # Q-learning update rule
-        # self.q_table[*discretized_state, action] = \
-        #     current_q + self.alpha[*discretized_state, action] * (reward + self.gamma * max_next_q - current_q)
-        self.q_table[*discretized_state, action] = \
-            current_q + self.alpha * (reward + self.gamma * max_next_q - current_q)
+        if self.alpha_per_state:
+            self.q_table[*discretized_state, action] = \
+                current_q + self.alpha[*discretized_state, action] * (reward + self.gamma * max_next_q - current_q)
+        else:
+            self.q_table[*discretized_state, action] = \
+                current_q + self.alpha * (reward + self.gamma * max_next_q - current_q)
 
-        # Count the visit
+        # Count the visits per state action pair
         self.visit_count[*discretized_state, action] += 1
-
-        # Decay alpha after each visit
-        if alpha_individual_decay:
-            self.alpha[*discretized_state, action] *= self.alpha_decay

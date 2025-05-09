@@ -22,18 +22,24 @@ def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individ
                 env.render()
         rewards.append(ep_reward)
 
-        # Log values
-        writer.add_scalar('reward', ep_reward, episode)
-        writer.add_scalar('alpha_median', np.median(agent.alpha), episode)
-        writer.add_scalar('alpha_mean', np.mean(agent.alpha), episode)
-        writer.add_scalar('epsilon', agent.epsilon, episode)
-
+        # Run the requested per episode decays
         if epsilon_decay:
             agent.decay_epsilon(episode)
         if alpha_global_decay:
             agent.decay_global_alpha(episode)
+        if alpha_individual_decay:
+            agent.decay_individual_alpha()
 
-        # Print on training overview
+        # Log values
+        writer.add_scalar('reward', ep_reward, episode)
+        writer.add_scalar('alpha_median', np.median(agent.alpha), episode)
+        writer.add_scalar('alpha_mean', np.mean(agent.alpha), episode)
+        writer.add_scalar('alpha_min', np.min(agent.alpha), episode)
+        writer.add_scalar('alpha_max', np.max(agent.alpha), episode)
+        writer.add_scalar('alpha_sum', np.sum(agent.alpha), episode)
+        writer.add_scalar('epsilon', agent.epsilon, episode)
+
+        # Print a training overview
         if (episode+1) % 200 == 0:
             print(f"Episode {episode+1-200} to {episode+1} \tMedian Reward: {np.median(rewards[-200:]):.2f}")
 
@@ -74,8 +80,8 @@ if __name__ == '__main__':
         episodes = 10_000
         
         epsilon_decay = True
-        alpha_global_decay = True
-        alpha_individual_decay = False
+        alpha_global_decay = False
+        alpha_individual_decay = True
 
         ep_count, rewards = train(agent, env, episodes,
                         epsilon_decay, alpha_global_decay, alpha_individual_decay, 
