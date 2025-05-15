@@ -1,7 +1,7 @@
 import numpy as np
 
 class QLearningAgent:
-    def __init__(self, vel_bins=4, delta_bins=16, 
+    def __init__(self, vel_bins=4, delta_bins=12, 
                  alpha=0.9, epsilon=1.0, gamma=0.99,
                  alpha_min=0.01, epsilon_min=0.05,
                  alpha_decay=0.9995, epsilon_decay=0.9995,
@@ -57,10 +57,12 @@ class QLearningAgent:
         self.alpha = np.maximum(self.alpha_min, self.alpha_0 * self.alpha_decay ** episodes)
 
 
-    def to_bin(self, val, bins, max_abs=10.0, method='log'):
+    def to_bin(_, val, bins, max_abs=10.0, method='log'):
         val = np.clip(val, -max_abs, max_abs)
-        if method == 'log':
-            # Avoid log(0); use log1p for numerical stability
+        if method == 'linear':
+            scaled = val / max_abs
+        elif method == 'log':
+            # To avoid log(0), use log1p for numerical stability
             scaled = np.sign(val) * np.log1p(abs(val)) / np.log1p(max_abs)
         elif method == 'sqrt':
             scaled = np.sign(val) * np.sqrt(abs(val)) / np.sqrt(max_abs)
@@ -75,7 +77,7 @@ class QLearningAgent:
     def discretize_obs(self, obs):
         # Get the bin for each observation element
         return [
-            self.to_bin(s, bin_count, method='log')
+            self.to_bin(s, bin_count, method='sqrt')
             for s, bin_count in zip(obs, [self.vel_bins] * 3 + [self.delta_bins] * 3)
         ]
 
