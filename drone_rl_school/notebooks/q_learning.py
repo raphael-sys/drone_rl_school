@@ -11,6 +11,7 @@ def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individ
     for episode in range(start_episode, start_episode + episodes):
         obs = env.reset()
         ep_reward = 0
+        ep_timesteps = 0
         done = False
         while not done:
             action = agent.choose_action(obs)
@@ -18,9 +19,11 @@ def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individ
             agent.update(obs, action, r, next_obs, alpha_individual_decay)
             obs = next_obs
             ep_reward += r
+            ep_timesteps += 1
             if visualize:
                 env.render()
-        rewards.append(ep_reward)
+        # Store the average reward of the episode
+        rewards.append(ep_reward / ep_timesteps)
 
         # Run the requested per episode decays
         if epsilon_decay:
@@ -31,7 +34,7 @@ def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individ
             agent.decay_individual_alpha()
 
         # Log values
-        writer.add_scalar('reward', ep_reward, episode)
+        writer.add_scalar('reward', rewards[-1], episode)
         writer.add_scalar('alpha_median', np.median(agent.alpha), episode)
         writer.add_scalar('alpha_mean', np.mean(agent.alpha), episode)
         writer.add_scalar('alpha_min', np.min(agent.alpha), episode)

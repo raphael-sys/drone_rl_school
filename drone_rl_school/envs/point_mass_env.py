@@ -44,7 +44,8 @@ class PointMassEnv(gym.Env):
 
         # Start at a random point around the origin and with zero velocity
         self.pos = self.goal + (np.random.rand(3) * 10 - 5)   # +5 to -5 from the goal in each dimension
-        self.vel = np.zeros(3)
+        # self.vel = np.zeros(3)
+        self.vel = self.goal + (np.random.rand(3) * 4 - 2)   # +2 to -2 from 0 in each dimension
 
         # Reset the step count
         self.steps = 0
@@ -73,10 +74,10 @@ class PointMassEnv(gym.Env):
 
         # End if goal is approximately reached or too many steps
         if dist < 0.2:   # Calculated to abort if distance is smaller than [0.1, 0.1, 0.1]
-            reward = 10_000
+            # reward = 10_000
             done = True
         elif dist > 18:   # Calculated to abort if distance is larger than [10, 10, 10]
-            reward = -10_000
+            # reward = -10_000
             done = True            
         elif self.steps >= self.max_steps:
             done = True
