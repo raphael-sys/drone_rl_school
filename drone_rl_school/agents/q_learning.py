@@ -6,11 +6,15 @@ class QLearningAgent:
                  alpha_min=0.01, epsilon_min=0.05,
                  alpha_decay=0.9995, epsilon_decay=0.9995,
                  alpha_per_state=False):
-        # The number of bins per dimension
+        # Definition of an observation:
+        # vx, vy, vz, dx, dy, dz
+
+        # The number of bins per observation dimension
         self.vel_bins = vel_bins
         self.delta_bins = delta_bins
 
-        # Define action space: 0:+x, 1:-x, 2:+y, 3:-y, 4:+z, 5:-z
+        # Define action space: 
+        # 0:+x, 1:-x, 2:+y, 3:-y, 4:+z, 5:-z
         self.num_actions = 6
 
         # Learning hyperparameters
@@ -53,37 +57,53 @@ class QLearningAgent:
         self.alpha = np.maximum(self.alpha_min, self.alpha_0 * self.alpha_decay ** episodes)
 
 
-    def discretize_state(self, state):
-        # Assuming all values range from -10 to 10, map them into [0, bins-1]
-        def to_bin(val, bins):
-            return int(np.clip((val + 10) / 20 * bins, 0, bins - 1))
+    def to_bin(self, val, bins, max_abs=10.0, method='log'):
+        val = np.clip(val, -max_abs, max_abs)
+        if method == 'log':
+            # Avoid log(0); use log1p for numerical stability
+            scaled = np.sign(val) * np.log1p(abs(val)) / np.log1p(max_abs)
+        elif method == 'sqrt':
+            scaled = np.sign(val) * np.sqrt(abs(val)) / np.sqrt(max_abs)
+        else:
+            raise ValueError("Unknown method")
+    
+        # Convert from [-1, 1] to [0, 1], then scale to bins
+        normed = (scaled + 1) / 2
+        return int(np.clip(normed * bins, 0, bins - 1))
 
-        return [to_bin(s, bin_count) for s, bin_count in zip(state, [self.vel_bins] * 3 + [self.delta_bins] * 3)]
+
+    def discretize_obs(self, obs):
+        # Get the bin for each observation element
+        return [
+            self.to_bin(s, bin_count, method='log')
+            for s, bin_count in zip(obs, [self.vel_bins] * 3 + [self.delta_bins] * 3)
+        ]
 
 
-    def choose_action(self, state):
+    def choose_action(self, obs):
         # Exploration
         if np.random.rand() < self.epsilon:
             return np.random.randint(self.num_actions)
         
         # Exploitation
-        discretized_state = self.discretize_state(state)
-        return np.argmax(self.q_table[*discretized_state, :])
+        discretized_obs = self.discretize_obs(obs)
+        return np.argmax(self.q_table[*discretized_obs, :])
 
-    def update(self, state, action, reward, next_state, alpha_individual_decay):
-        discretized_state = self.discretize_state(state)
-        discretized_next_state = self.discretize_state(next_state)
 
-        current_q = self.q_table[*discretized_state, action]
-        max_next_q = np.max(self.q_table[*discretized_next_state])
+    def update(self, obs, action, reward, next_obs, alpha_individual_decay):
+        discretized_obs = self.discretize_obs(obs)
+        discretized_next_obs = self.discretize_obs(next_obs)
+
+        current_q = self.q_table[*discretized_obs, action]
+        max_next_q = np.max(self.q_table[*discretized_next_obs])
 
         # Q-learning update rule
         if self.alpha_per_state:
-            self.q_table[*discretized_state, action] = \
-                current_q + self.alpha[*discretized_state, action] * (reward + self.gamma * max_next_q - current_q)
+            self.q_table[*discretized_obs, action] = \
+                current_q + self.alpha[*discretized_obs, action] * (reward + self.gamma * max_next_q - current_q)
         else:
-            self.q_table[*discretized_state, action] = \
+            self.q_table[*discretized_obs, action] = \
                 current_q + self.alpha * (reward + self.gamma * max_next_q - current_q)
 
         # Count the visits per state action pair
-        self.visit_count[*discretized_state, action] += 1
+        self.visit_count[*discretized_obs, action] += 1
