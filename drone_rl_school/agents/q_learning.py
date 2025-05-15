@@ -1,7 +1,7 @@
 import numpy as np
 
 class QLearningAgent:
-    def __init__(self, vel_bins=4, delta_bins=12, 
+    def __init__(self, vel_bins=4, delta_bins=16, 
                  alpha=0.9, epsilon=1.0, gamma=0.99,
                  alpha_min=0.01, epsilon_min=0.05,
                  alpha_decay=0.9995, epsilon_decay=0.9995,

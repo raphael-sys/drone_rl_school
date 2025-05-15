@@ -7,23 +7,27 @@ from torch.utils.tensorboard import SummaryWriter
 
 def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individual_decay, 
           writer, start_episode=0, visualize=False):
+    metrics = []
     rewards = []
     for episode in range(start_episode, start_episode + episodes):
         obs = env.reset()
-        ep_reward = 0
-        ep_timesteps = 0
+        ep_rewards = []
+        ep_metrics = []
         done = False
+
         while not done:
             action = agent.choose_action(obs)
             next_obs, r, done, _ = env.step(action)
             agent.update(obs, action, r, next_obs, alpha_individual_decay)
             obs = next_obs
-            ep_reward += r
-            ep_timesteps += 1
+            ep_rewards.append(r)
+            ep_metrics.append(env.metric())
             if visualize:
                 env.render()
-        # Store the average reward of the episode
-        rewards.append(ep_reward / ep_timesteps)
+
+        # Store the average epoch metric and reward
+        metrics.append(np.mean(ep_metrics))
+        rewards.append(np.mean(ep_rewards))
 
         # Run the requested per episode decays
         if epsilon_decay:
@@ -34,17 +38,20 @@ def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individ
             agent.decay_individual_alpha()
 
         # Log values
+        writer.add_scalar('metric', metrics[-1], episode)
         writer.add_scalar('reward', rewards[-1], episode)
+        writer.add_scalar('epsilon', agent.epsilon, episode)
         writer.add_scalar('alpha_median', np.median(agent.alpha), episode)
         writer.add_scalar('alpha_mean', np.mean(agent.alpha), episode)
         writer.add_scalar('alpha_min', np.min(agent.alpha), episode)
         writer.add_scalar('alpha_max', np.max(agent.alpha), episode)
         writer.add_scalar('alpha_sum', np.sum(agent.alpha), episode)
-        writer.add_scalar('epsilon', agent.epsilon, episode)
 
         # Print a training overview
-        if (episode+1) % 200 == 0:
-            print(f"Episode {episode+1-200} to {episode+1} \tMedian Reward: {np.median(rewards[-200:]):.2f}")
+        n = 100
+        if (episode + 1) % n == 0:
+            print(f"Episode {episode + 1 - n} to {episode + 1} \t \
+                  Mean of Metric: {np.mean(metrics[-n:]):.2f}")
 
     return episodes, rewards
 
@@ -80,7 +87,7 @@ if __name__ == '__main__':
     episodes_trained = 0
     while True:
         # Train without visualization
-        episodes = 5_000
+        episodes = 4_000
         
         epsilon_decay = True
         alpha_global_decay = True
@@ -90,16 +97,6 @@ if __name__ == '__main__':
                         epsilon_decay, alpha_global_decay, alpha_individual_decay, 
                         writer, start_episode=episodes_trained)
         episodes_trained += ep_count
-
-        # Plot the rewards over time
-        plt.figure()
-        plt.plot(rewards)
-        plt.xlabel('Episode')
-        plt.ylabel('Total Reward')
-        plt.title('3D Q‑Learning: Reward per Episode')
-        plt.grid()
-        plt.tight_layout()
-        plt.show()
 
         # Run a demo with visualization
         simulate(agent, env)

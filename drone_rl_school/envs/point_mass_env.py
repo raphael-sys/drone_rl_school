@@ -44,8 +44,8 @@ class PointMassEnv(gym.Env):
 
         # Start at a random point around the origin and with zero velocity
         self.pos = self.goal + (np.random.rand(3) * 10 - 5)   # +5 to -5 from the goal in each dimension
-        # self.vel = np.zeros(3)
-        self.vel = self.goal + (np.random.rand(3) * 4 - 2)   # +2 to -2 from 0 in each dimension
+        self.vel = np.zeros(3)
+        # self.vel = self.goal + (np.random.rand(3) * 2 - 1)   # +1 to -1 from 0 in each dimension
 
         # Reset the step count
         self.steps = 0
@@ -55,6 +55,35 @@ class PointMassEnv(gym.Env):
     def _get_obs(self):
         pos_delta = self.goal - self.pos
         return np.concatenate([self.vel, pos_delta]).astype(np.float32)
+
+    def reward(self):
+        # Returns the reward for the current state
+        
+        dist = np.linalg.norm(self.goal - self.pos)
+        reward = -dist 
+        # reward = -dist**2 - 0.1 * np.linalg.norm(self.vel)
+
+        # End if goal is approximately reached or too many steps
+        if dist < 0.2:   # Calculated to abort if distance is smaller than [0.1, 0.1, 0.1]
+            reward = 10_000
+            done = True
+        elif dist > 18:   # Calculated to abort if distance is larger than [10, 10, 10]
+            reward = -10_000
+            done = True            
+        elif self.steps >= self.max_steps:
+            done = True
+        else:
+            done = False
+
+        return done, reward
+    
+    def metric(self):
+        # Returns the metric (the value) of the current state
+        
+        dist = np.linalg.norm(self.goal - self.pos)
+        metric = -dist
+
+        return metric
 
     def step(self, action):
         # Get the acceleration from the selected action
@@ -69,20 +98,7 @@ class PointMassEnv(gym.Env):
         self.steps += 1
 
         # Calculate the reward
-        dist = np.linalg.norm(self.goal - self.pos)
-        reward = -dist   # -dist**2 # - 0.1 * np.linalg.norm(self.vel)
-
-        # End if goal is approximately reached or too many steps
-        if dist < 0.2:   # Calculated to abort if distance is smaller than [0.1, 0.1, 0.1]
-            # reward = 10_000
-            done = True
-        elif dist > 18:   # Calculated to abort if distance is larger than [10, 10, 10]
-            # reward = -10_000
-            done = True            
-        elif self.steps >= self.max_steps:
-            done = True
-        else:
-            done = False
+        done, reward = self.reward()
 
         return self._get_obs(), reward, done, {}
 
