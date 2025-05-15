@@ -12,15 +12,17 @@ class PointMassEnv(gym.Env):
         self.dt = dt
         self.max_steps = max_steps
 
-        # State: x,y,z
+        # Position: x,y,z
+        self.pos = None
         # Velocity: vx,vy,vz
-        # Delta (to goal): dx,dy,dz
-        self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(9,), dtype=np.float32
-        )
+        self.vel = None
+
+        # Position of the target
+        self.goal = None
 
         # Actions: 0:+x, 1:-x, 2:+y, 3:-y, 4:+z, 5:-z
-        self.action_space = spaces.Discrete(6)
+
+        # Reset the env, including state, goal and step counter
         self.reset()
 
         # Visualization setup
@@ -53,6 +55,7 @@ class PointMassEnv(gym.Env):
         return self._get_obs()
 
     def _get_obs(self):
+        # Observation: vx, vy, vz, dx, dy, dz
         pos_delta = self.goal - self.pos
         return np.concatenate([self.vel, pos_delta]).astype(np.float32)
 
