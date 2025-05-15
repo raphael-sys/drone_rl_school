@@ -1,9 +1,9 @@
 import numpy as np
 
 class QLearningAgent:
-    def __init__(self, vel_bins=4, delta_bins=12, 
-                 alpha=0.9, epsilon=1.0, gamma=0.99,
-                 alpha_min=0.01, epsilon_min=0.05,
+    def __init__(self, vel_bins=16, delta_bins=16, 
+                 alpha=1.0, epsilon=1.0, gamma=0.99,
+                 alpha_min=0.005, epsilon_min=0.01,
                  alpha_decay=0.9995, epsilon_decay=0.9995,
                  alpha_per_state=False):
         # Definition of an observation:
@@ -77,7 +77,7 @@ class QLearningAgent:
     def discretize_obs(self, obs):
         # Get the bin for each observation element
         return [
-            self.to_bin(s, bin_count, method='sqrt')
+            self.to_bin(s, bin_count, method='linear')
             for s, bin_count in zip(obs, [self.vel_bins] * 3 + [self.delta_bins] * 3)
         ]
 

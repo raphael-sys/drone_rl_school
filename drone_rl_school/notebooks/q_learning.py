@@ -87,7 +87,7 @@ if __name__ == '__main__':
     episodes_trained = 0
     while True:
         # Train without visualization
-        episodes = 1_000
+        episodes = 2_000
         
         epsilon_decay = True
         alpha_global_decay = True
@@ -100,5 +100,3 @@ if __name__ == '__main__':
 
         # Run a demo with visualization
         simulate(agent, env)
-
-        break
