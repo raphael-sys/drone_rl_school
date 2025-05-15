@@ -6,7 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individual_decay, 
-          writer, start_episode=0, best_score=float('-inf'), visualize=False):
+          writer, start_episode=0, best_score=float('-inf'), visualize=False, store_model=False):
     metrics = []
     rewards = []
     for episode in range(start_episode, start_episode + episodes):
@@ -52,7 +52,7 @@ def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individ
         if (episode + 1) % n == 0:
             print(f"Episode {episode + 1 - n} to {episode + 1} \t \
                   Mean of Metric: {np.mean(metrics[-n:]):.2f}")
-            if np.mean(metrics[-n:]) > best_score:
+            if store_model and np.mean(metrics[-n:]) > best_score:
                 best_score = np.mean(metrics[-n:])
                 agent.save_model(best_score, episode)
                 print(f"New best agent saved.")
@@ -88,6 +88,8 @@ if __name__ == '__main__':
     agent = QLearningAgent(alpha_per_state=False)
     writer = SummaryWriter()    # bash: tensorboard --logdir=runs, http://localhost:6006
 
+    store_model = False
+
     episodes_trained = 0
     best_score = float('-inf')
     while True:
@@ -100,7 +102,8 @@ if __name__ == '__main__':
 
         ep_count, rewards, best_score = train(agent, env, episodes,
                         epsilon_decay, alpha_global_decay, alpha_individual_decay, 
-                        writer, start_episode=episodes_trained, best_score=best_score)
+                        writer, start_episode=episodes_trained, best_score=best_score,
+                        store_model=store_model)
         episodes_trained += ep_count
 
         # Run a demo with visualization
