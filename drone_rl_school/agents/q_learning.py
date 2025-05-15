@@ -1,3 +1,4 @@
+import json
 import numpy as np
 
 class QLearningAgent:
@@ -109,3 +110,32 @@ class QLearningAgent:
 
         # Count the visits per state action pair
         self.visit_count[*discretized_obs, action] += 1
+
+    
+    def save_model(self, score, episode):
+        np.save(f"best_models/q_table_score_{score}_q_table.npy", self.q_table)
+        metadata = {
+            "score": score,
+            "episodes": episode,
+            "delta_bins": self.delta_bins, 
+            "vel_bins": self.vel_bins, 
+            "agent": self.alpha, 
+            "epsilon": self.epsilon, 
+            "alpha_min": self.alpha_min, 
+            "epsilon_min": self.epsilon_min, 
+            "alpha_decay": self.alpha_decay, 
+            "epsilon_decay": self.epsilon_decay,
+            }
+        with open(f"best_models/q_table_score_{score}_metadata.json", "w") as f:
+            json.dump(metadata, f)
+
+
+    def load_model(self, model_name):
+        self.q_table = np.load("q_table.npy")
+
+        # Loading of the metadata not implemented
+        with open("metadata.json", "r") as f:
+            metadata = json.load(f)
+        print('Loading of metadata not implemented. ' \
+        'Metadata is shown here, but not stored or considered in the model.')
+        print(metadata)

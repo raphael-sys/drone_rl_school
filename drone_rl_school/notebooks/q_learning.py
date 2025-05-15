@@ -1,4 +1,3 @@
-import json
 from drone_rl_school.envs.point_mass_env import PointMassEnv
 from drone_rl_school.agents.q_learning import QLearningAgent
 import numpy as np
@@ -55,21 +54,7 @@ def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individ
                   Mean of Metric: {np.mean(metrics[-n:]):.2f}")
             if np.mean(metrics[-n:]) > best_score:
                 best_score = np.mean(metrics[-n:])
-                np.save(f"best_models/q_table_score_{best_score}_q_table.npy", agent.q_table)
-                metadata = {
-                    "best_score": best_score,
-                    "episodes": episode,
-                    "delta_bins": agent.delta_bins, 
-                    "vel_bins": agent.vel_bins, 
-                    "agent": agent.alpha, 
-                    "epsilon": agent.epsilon, 
-                    "alpha_min": agent.alpha_min, 
-                    "epsilon_min": agent.epsilon_min, 
-                    "alpha_decay": agent.alpha_decay, 
-                    "epsilon_decay": agent.epsilon_decay,
-                    }
-                with open(f"best_models/q_table_score_{best_score}_metadata.json", "w") as f:
-                    json.dump(metadata, f)
+                agent.save_model(best_score, episode)
                 print(f"New best agent saved.")
 
     return episodes, rewards, best_score
