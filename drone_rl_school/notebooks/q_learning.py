@@ -1,3 +1,4 @@
+import json
 from drone_rl_school.envs.point_mass_env import PointMassEnv
 from drone_rl_school.agents.q_learning import QLearningAgent
 import numpy as np
@@ -6,7 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individual_decay, 
-          writer, start_episode=0, visualize=False):
+          writer, start_episode=0, best_score=float('-inf'), visualize=False):
     metrics = []
     rewards = []
     for episode in range(start_episode, start_episode + episodes):
@@ -48,12 +49,30 @@ def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individ
         writer.add_scalar('alpha_sum', np.sum(agent.alpha), episode)
 
         # Print a training overview
-        n = 100
+        n = 400
         if (episode + 1) % n == 0:
             print(f"Episode {episode + 1 - n} to {episode + 1} \t \
                   Mean of Metric: {np.mean(metrics[-n:]):.2f}")
+            if np.mean(metrics[-n:]) > best_score:
+                best_score = np.mean(metrics[-n:])
+                np.save(f"best_models/q_table_score_{best_score}_q_table.npy", agent.q_table)
+                metadata = {
+                    "best_score": best_score,
+                    "episodes": episode,
+                    "delta_bins": agent.delta_bins, 
+                    "vel_bins": agent.vel_bins, 
+                    "agent": agent.alpha, 
+                    "epsilon": agent.epsilon, 
+                    "alpha_min": agent.alpha_min, 
+                    "epsilon_min": agent.epsilon_min, 
+                    "alpha_decay": agent.alpha_decay, 
+                    "epsilon_decay": agent.epsilon_decay,
+                    }
+                with open(f"best_models/q_table_score_{best_score}_metadata.json", "w") as f:
+                    json.dump(metadata, f)
+                print(f"New best agent saved.")
 
-    return episodes, rewards
+    return episodes, rewards, best_score
 
 
 def simulate(agent, env, episodes=1):
@@ -85,6 +104,7 @@ if __name__ == '__main__':
     writer = SummaryWriter()    # bash: tensorboard --logdir=runs, http://localhost:6006
 
     episodes_trained = 0
+    best_score = float('-inf')
     while True:
         # Train without visualization
         episodes = 2_000
@@ -93,9 +113,9 @@ if __name__ == '__main__':
         alpha_global_decay = True
         alpha_individual_decay = False
 
-        ep_count, rewards = train(agent, env, episodes,
+        ep_count, rewards, best_score = train(agent, env, episodes,
                         epsilon_decay, alpha_global_decay, alpha_individual_decay, 
-                        writer, start_episode=episodes_trained)
+                        writer, start_episode=episodes_trained, best_score=best_score)
         episodes_trained += ep_count
 
         # Run a demo with visualization

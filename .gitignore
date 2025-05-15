@@ -10,5 +10,6 @@
 # Ignore VS-Code specific files
 .vscode/*
 
-# Ignore training logs
+# Ignore training logs and stored models
 runs/*
+best_models/*
