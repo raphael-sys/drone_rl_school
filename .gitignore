@@ -9,3 +9,6 @@
 
 # Ignore VS-Code specific files
 .vscode/*
+
+# Ignore training logs
+runs/*
