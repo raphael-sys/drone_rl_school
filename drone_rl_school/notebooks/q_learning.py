@@ -1,3 +1,4 @@
+from drone_rl_school.agents.dqn import DQNAgent
 from drone_rl_school.envs.point_mass_env import PointMassEnv
 from drone_rl_school.agents.q_learning import QLearningAgent
 import numpy as np
@@ -85,7 +86,8 @@ def simulate(agent, env, episodes=1):
 
 if __name__ == '__main__':
     env = PointMassEnv()
-    agent = QLearningAgent(alpha_per_state=False)
+    # agent = QLearningAgent(alpha_per_state=False)
+    agent = DQNAgent()
     writer = SummaryWriter()    # bash: tensorboard --logdir=runs, http://localhost:6006
 
     store_model = False
