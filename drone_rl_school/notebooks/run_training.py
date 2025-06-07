@@ -1,4 +1,4 @@
-from drone_rl_school.agents.dqn import DQNAgent
+from drone_rl_school.agents.dqn import DQNAgent, ReplayBuffer
 from drone_rl_school.envs.point_mass_env import PointMassEnv
 from drone_rl_school.agents.q_learning import QLearningAgent
 import numpy as np
@@ -7,7 +7,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individual_decay, 
-          writer, start_episode=0, best_score=float('-inf'), visualize=False, store_model=False):
+          writer, train_min_batch_size, start_episode=0, best_score=float('-inf'), 
+          buffer=None, visualize=False, store_model=False):
     metrics = []
     rewards = []
     for episode in range(start_episode, start_episode + episodes):
@@ -18,11 +19,20 @@ def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individ
 
         while not done:
             action = agent.choose_action(obs)
-            next_obs, r, done, _ = env.step(action)
-            agent.update(obs, action, r, next_obs, alpha_individual_decay)
+            next_obs, reward, done, _ = env.step(action)
+
+            # Add the step to the experience buffer if one exists
+            if buffer:
+                buffer.push(obs, action, reward, next_obs, done)
+
+            # The training
+            if len(buffer) >= train_min_batch_size:
+                agent.update(obs, action, reward, next_obs, alpha_individual_decay)
+            
             obs = next_obs
-            ep_rewards.append(r)
+            ep_rewards.append(reward)
             ep_metrics.append(env.metric())
+            
             if visualize:
                 env.render()
 
@@ -86,8 +96,13 @@ def simulate(agent, env, episodes=1):
 
 if __name__ == '__main__':
     env = PointMassEnv()
+    
     # agent = QLearningAgent(alpha_per_state=False)
+    
     agent = DQNAgent()
+    buffer = ReplayBuffer()
+    train_min_batch_size = 1_000
+
     writer = SummaryWriter()    # bash: tensorboard --logdir=runs, http://localhost:6006
 
     store_model = False
@@ -104,8 +119,9 @@ if __name__ == '__main__':
 
         ep_count, rewards, best_score = train(agent, env, episodes,
                         epsilon_decay, alpha_global_decay, alpha_individual_decay, 
-                        writer, start_episode=episodes_trained, best_score=best_score,
-                        store_model=store_model)
+                        writer, train_min_batch_size,
+                        start_episode=episodes_trained, best_score=best_score,
+                        store_model=store_model, buffer=buffer)
         episodes_trained += ep_count
 
         # Run a demo with visualization
