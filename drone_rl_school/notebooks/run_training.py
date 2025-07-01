@@ -116,8 +116,9 @@ if __name__ == '__main__':
     episodes_trained = 0
     best_score = float('-inf')
     while True:
+        env.disturbance_strength = 0.2
         # Train without visualization
-        episodes = 200
+        episodes = 250
         
         epsilon_decay = True
         alpha_global_decay = True
@@ -131,4 +132,6 @@ if __name__ == '__main__':
         episodes_trained += ep_count
 
         # Run a demo with visualization
+        env.disturbance_strength = 0
         simulate(agent, env)
+        env.disturbance_strength = 0.2

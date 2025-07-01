@@ -7,10 +7,12 @@ import numpy as np
 class PointMassEnv(gym.Env):
     metadata = {'render.modes': ['human']}
     
-    def __init__(self, dt=0.1, max_steps=400):
+    def __init__(self, dt=0.1, max_steps=400, disturbance_strength=0.1):
         super().__init__()
         self.dt = dt
         self.max_steps = max_steps
+
+        self.disturbance_strength = disturbance_strength
 
         # Position: x,y,z
         self.pos = None
@@ -63,19 +65,21 @@ class PointMassEnv(gym.Env):
         # Returns the reward for the current state
         
         dist = np.linalg.norm(self.goal - self.pos)
-        reward = -dist 
+        vel_norm = np.linalg.norm(self.vel)
         # reward = -dist**2 - 0.1 * np.linalg.norm(self.vel)
 
         # End if goal is approximately reached or too many steps
-        if dist < 0.2:   # Calculated to abort if distance is smaller than [0.1, 0.1, 0.1]
+        if dist < 0.1 and vel_norm < 0.1:   # Calculated to abort if distance and velocity is smaller than e.g. [0.1, 0.1, 0.1]
             reward = 10_000
             done = True
         elif dist > 18:   # Calculated to abort if distance is larger than [10, 10, 10]
             reward = -10_000
             done = True            
         elif self.steps >= self.max_steps:
+            reward = -dist 
             done = True
         else:
+            reward = -dist 
             done = False
 
         return done, reward
@@ -88,6 +92,9 @@ class PointMassEnv(gym.Env):
 
         return metric
 
+    def disturbance_acc(self):
+        return np.random.rand(3) * self.disturbance_strength
+
     def step(self, action):
         # Get the acceleration from the selected action
         acc = np.zeros(3)
@@ -96,7 +103,7 @@ class PointMassEnv(gym.Env):
         acc[idx] = sign * 1.0
 
         # Discrete physics of the movements
-        self.vel += acc * self.dt
+        self.vel += (acc * self.dt + self.disturbance_acc() * self.dt)
         self.pos += self.vel * self.dt
         self.steps += 1
 
@@ -104,6 +111,7 @@ class PointMassEnv(gym.Env):
         done, reward = self.reward()
 
         return self._get_obs(), reward, done, {}
+
 
     def render(self, mode='human'):
         # Initialize plot
