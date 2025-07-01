@@ -9,11 +9,11 @@ class QNetwork(torch.nn.Module):
     def __init__(self, state_dim, action_dim):
         super().__init__()
         self.neuralnet = torch.nn.Sequential(
-            torch.nn.Linear(state_dim, 8),
-            # torch.nn.ReLU(),
-            # torch.nn.Linear(8, 8),
+            torch.nn.Linear(state_dim, 64),
             torch.nn.ReLU(),
-            torch.nn.Linear(8, action_dim)
+            torch.nn.Linear(64, 64),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, action_dim)
         )
 
     def forward(self, x):

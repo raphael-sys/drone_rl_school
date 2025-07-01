@@ -105,8 +105,8 @@ if __name__ == '__main__':
     
     agent = DQNAgent()
     buffer = ReplayBuffer()
-    min_batch_count = 2
-    batch_size = 2
+    min_batch_count = 1_000
+    batch_size = 32
     target_update_freq = 10
 
     writer = SummaryWriter()    # bash: tensorboard --logdir=runs, http://localhost:6006
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     best_score = float('-inf')
     while True:
         # Train without visualization
-        episodes = 1000
+        episodes = 200
         
         epsilon_decay = True
         alpha_global_decay = True
