@@ -45,7 +45,7 @@ class ReplayBuffer:
 
 class DQNAgent:
     def __init__(self, vel_bins=16, delta_bins=16, 
-                 alpha=0.001, epsilon=0.2, gamma=0.99,
+                 alpha=0.001, epsilon=0.1, gamma=0.99,
                  alpha_min=0.005, epsilon_min=0.01,
                  alpha_decay=0.9995, epsilon_decay=0.9995):
         # Definition of an observation:
