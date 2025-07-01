@@ -116,7 +116,7 @@ if __name__ == '__main__':
     episodes_trained = 0
     best_score = float('-inf')
     while True:
-        env.disturbance_strength = 0.2
+        env.disturbance_strength = 0
         # Train without visualization
         episodes = 250
         
@@ -134,4 +134,4 @@ if __name__ == '__main__':
         # Run a demo with visualization
         env.disturbance_strength = 0
         simulate(agent, env)
-        env.disturbance_strength = 0.2
+        env.disturbance_strength = 0
