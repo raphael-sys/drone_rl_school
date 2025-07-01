@@ -7,7 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individual_decay, 
-          writer, train_min_batch_size, start_episode=0, best_score=float('-inf'), 
+          writer, min_batch_count, batch_size, target_update_freq, start_episode=0, best_score=float('-inf'), 
           buffer=None, visualize=False, store_model=False):
     metrics = []
     rewards = []
@@ -22,12 +22,12 @@ def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individ
             next_obs, reward, done, _ = env.step(action)
 
             # Add the step to the experience buffer if one exists
-            if buffer:
+            if buffer is not None:
                 buffer.push(obs, action, reward, next_obs, done)
 
             # The training
-            if len(buffer) >= train_min_batch_size:
-                agent.update(obs, action, reward, next_obs, alpha_individual_decay)
+            if len(buffer) >= min_batch_count:
+                agent.update(buffer, batch_size)
             
             obs = next_obs
             ep_rewards.append(reward)
@@ -58,8 +58,12 @@ def train(agent, env, episodes, epsilon_decay, alpha_global_decay, alpha_individ
         writer.add_scalar('alpha_max', np.max(agent.alpha), episode)
         writer.add_scalar('alpha_sum', np.sum(agent.alpha), episode)
 
+        # Update target net
+        if episode % target_update_freq == 0:
+            agent.target_net.load_state_dict(agent.q_net.state_dict())
+
         # Print a training overview
-        n = 400
+        n = 100
         if (episode + 1) % n == 0:
             print(f"Episode {episode + 1 - n} to {episode + 1} \t \
                   Mean of Metric: {np.mean(metrics[-n:]):.2f}")
@@ -101,7 +105,9 @@ if __name__ == '__main__':
     
     agent = DQNAgent()
     buffer = ReplayBuffer()
-    train_min_batch_size = 1_000
+    min_batch_count = 1000
+    batch_size = 256
+    target_update_freq = 10
 
     writer = SummaryWriter()    # bash: tensorboard --logdir=runs, http://localhost:6006
 
@@ -111,7 +117,7 @@ if __name__ == '__main__':
     best_score = float('-inf')
     while True:
         # Train without visualization
-        episodes = 2_000
+        episodes = 1000
         
         epsilon_decay = True
         alpha_global_decay = True
@@ -119,7 +125,7 @@ if __name__ == '__main__':
 
         ep_count, rewards, best_score = train(agent, env, episodes,
                         epsilon_decay, alpha_global_decay, alpha_individual_decay, 
-                        writer, train_min_batch_size,
+                        writer, min_batch_count, batch_size, target_update_freq,
                         start_episode=episodes_trained, best_score=best_score,
                         store_model=store_model, buffer=buffer)
         episodes_trained += ep_count

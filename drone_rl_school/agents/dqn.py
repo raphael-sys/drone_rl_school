@@ -9,11 +9,11 @@ class QNetwork(torch.nn.Module):
     def __init__(self, state_dim, action_dim):
         super().__init__()
         self.neuralnet = torch.nn.Sequential(
-            torch.nn.Linear(state_dim, 128),
+            torch.nn.Linear(state_dim, 256),
             torch.nn.ReLU(),
-            torch.nn.Linear(128, 128),
+            torch.nn.Linear(256, 256),
             torch.nn.ReLU(),
-            torch.nn.Linear(128, action_dim)
+            torch.nn.Linear(256, action_dim)
         )
 
     def forward(self, x):
@@ -21,7 +21,7 @@ class QNetwork(torch.nn.Module):
 
 
 class ReplayBuffer:
-    def __init__(self, capacity):
+    def __init__(self, capacity=100_000):
         self.buffer = deque(maxlen=capacity)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -52,10 +52,6 @@ class DQNAgent:
         # vx, vy, vz, dx, dy, dz
         self.num_observations = 6
 
-        # The number of bins per observation dimension
-        self.vel_bins = vel_bins
-        self.delta_bins = delta_bins
-
         # Define action space: 
         # 0:+x, 1:-x, 2:+y, 3:-y, 4:+z, 5:-z
         self.num_actions = 6
@@ -71,8 +67,16 @@ class DQNAgent:
         self.alpha_decay = alpha_decay
         self.epsilon_decay = epsilon_decay
 
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         # Q-table: (vel_x, vel_y, vel_z, delta_x, delta_y, delta_z, action) → Q-value
-        self.q_net = QNetwork(self.num_observations, self.num_actions)
+        self.q_net = QNetwork(self.num_observations, self.num_actions).to(device)
+
+        # Target net
+        self.target_net = QNetwork(self.num_observations, self.num_actions).to(device)
+        self.target_net.load_state_dict(self.q_net.state_dict())
+
+        self.optimizer = torch.optim.Adam(self.q_net.parameters(), lr=self.alpha)
         
 
     def decay_epsilon(self, episodes):
@@ -90,29 +94,27 @@ class DQNAgent:
         
         # Exploitation
         with torch.no_grad():
-            q_values = self.q_net(observation)
+            q_values = self.q_net(torch.tensor(observation, dtype=torch.float32))
             action = q_values.argmax().item()
         return action
 
 
-    def update(self, obs, action, reward, next_obs, alpha_individual_decay):
-        discretized_obs = self.discretize_obs(obs)
-        discretized_next_obs = self.discretize_obs(next_obs)
+    def update(self, buffer, batch_size):
+        states, actions, rewards, next_states, dones = buffer.sample(batch_size)
 
-        current_q = self.q_table[*discretized_obs, action]
-        max_next_q = np.max(self.q_table[*discretized_next_obs])
+        # Compute targets
+        with torch.no_grad():
+            max_next_q = self.target_net(next_states).max(1, keepdim=True)[0]
+            targets = rewards + (1 - dones) * self.gamma * max_next_q
 
-        # Q-learning update rule
-        if self.alpha_per_state:
-            self.q_table[*discretized_obs, action] = \
-                current_q + self.alpha[*discretized_obs, action] * (reward + self.gamma * max_next_q - current_q)
-        else:
-            self.q_table[*discretized_obs, action] = \
-                current_q + self.alpha * (reward + self.gamma * max_next_q - current_q)
+        # Compute loss
+        current_q = self.q_net(states).gather(1, actions)
+        loss = torch.nn.functional.smooth_l1_loss(current_q, targets)
 
-        # Count the visits per state action pair
-        self.visit_count[*discretized_obs, action] += 1
-
+        # Optimize
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
     
     def save_model(self, score, episode):
         np.save(f"best_models/q_table_score_{score}_q_table.npy", self.q_table)
