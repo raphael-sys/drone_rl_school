@@ -9,11 +9,11 @@ class QNetwork(torch.nn.Module):
     def __init__(self, state_dim, action_dim):
         super().__init__()
         self.neuralnet = torch.nn.Sequential(
-            torch.nn.Linear(state_dim, 256),
+            torch.nn.Linear(state_dim, 8),
+            # torch.nn.ReLU(),
+            # torch.nn.Linear(8, 8),
             torch.nn.ReLU(),
-            torch.nn.Linear(256, 256),
-            torch.nn.ReLU(),
-            torch.nn.Linear(256, action_dim)
+            torch.nn.Linear(8, action_dim)
         )
 
     def forward(self, x):
@@ -45,7 +45,7 @@ class ReplayBuffer:
 
 class DQNAgent:
     def __init__(self, vel_bins=16, delta_bins=16, 
-                 alpha=1.0, epsilon=1.0, gamma=0.99,
+                 alpha=0.01, epsilon=0.4, gamma=0.99,
                  alpha_min=0.005, epsilon_min=0.01,
                  alpha_decay=0.9995, epsilon_decay=0.9995):
         # Definition of an observation:
@@ -84,7 +84,11 @@ class DQNAgent:
 
 
     def decay_global_alpha(self, episodes):
+        # self.alpha = np.maximum(self.alpha_min, self.alpha_0 * self.alpha_decay ** episodes)
+
         self.alpha = np.maximum(self.alpha_min, self.alpha_0 * self.alpha_decay ** episodes)
+        for param_group in self.optimizer.param_groups:
+            param_group['lr'] = self.alpha
 
 
     def choose_action(self, observation):
@@ -117,6 +121,7 @@ class DQNAgent:
         self.optimizer.step()
     
     def save_model(self, score, episode):
+        raise NotImplementedError
         np.save(f"best_models/q_table_score_{score}_q_table.npy", self.q_table)
         metadata = {
             "score": score,

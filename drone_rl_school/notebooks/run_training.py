@@ -105,8 +105,8 @@ if __name__ == '__main__':
     
     agent = DQNAgent()
     buffer = ReplayBuffer()
-    min_batch_count = 1000
-    batch_size = 256
+    min_batch_count = 2
+    batch_size = 2
     target_update_freq = 10
 
     writer = SummaryWriter()    # bash: tensorboard --logdir=runs, http://localhost:6006
