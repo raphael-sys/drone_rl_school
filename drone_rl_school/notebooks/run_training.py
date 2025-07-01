@@ -107,7 +107,7 @@ if __name__ == '__main__':
     buffer = ReplayBuffer()
     min_batch_count = 1_000
     batch_size = 32
-    target_update_freq = 10
+    target_update_freq = 4
 
     writer = SummaryWriter()    # bash: tensorboard --logdir=runs, http://localhost:6006
 
