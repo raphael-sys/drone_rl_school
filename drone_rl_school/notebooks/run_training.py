@@ -102,45 +102,49 @@ def simulate(agent, env, episodes=1):
 
 
 if __name__ == '__main__':
+    # Set up the environment
     env = PointMassEnv()
+    writer = SummaryWriter()    # bash: tensorboard --logdir=runs, http://localhost:6006
+
+    store_model = False
+
+    agent_type = 'dqn'
+
+    if agent_type == 'dqn':
+        agent = QLearningAgent(alpha_per_state=False)
     
-    # agent = QLearningAgent(alpha_per_state=False)
-    
-    # agent = DQNAgent()
-    # buffer = ReplayBuffer()
-    # min_batch_count = 1_000
-    # batch_size = 32
-    # target_update_freq = 4
+        agent = DQNAgent()
+        buffer = ReplayBuffer()
+        min_batch_count = 1_000
+        batch_size = 32
+        target_update_freq = 4
 
-    # writer = SummaryWriter()    # bash: tensorboard --logdir=runs, http://localhost:6006
+        episodes_trained = 0
+        best_score = float('-inf')
+        while True:
+            env.disturbance_strength = 0
+            # Train without visualization
+            episodes = 250
+            
+            epsilon_decay = True
+            alpha_global_decay = True
+            alpha_individual_decay = False
 
-    # store_model = False
+            ep_count, rewards, best_score = train(agent, env, episodes,
+                            epsilon_decay, alpha_global_decay, alpha_individual_decay, 
+                            writer, min_batch_count, batch_size, target_update_freq,
+                            start_episode=episodes_trained, best_score=best_score,
+                            store_model=store_model, buffer=buffer)
+            episodes_trained += ep_count
 
-    # episodes_trained = 0
-    # best_score = float('-inf')
-    # while True:
-    #     env.disturbance_strength = 0
-    #     # Train without visualization
-    #     episodes = 250
-        
-    #     epsilon_decay = True
-    #     alpha_global_decay = True
-    #     alpha_individual_decay = False
+            # Run a demo with visualization
+            env.disturbance_strength = 0
+            simulate(agent, env)
+            env.disturbance_strength = 0
 
-    #     ep_count, rewards, best_score = train(agent, env, episodes,
-    #                     epsilon_decay, alpha_global_decay, alpha_individual_decay, 
-    #                     writer, min_batch_count, batch_size, target_update_freq,
-    #                     start_episode=episodes_trained, best_score=best_score,
-    #                     store_model=store_model, buffer=buffer)
-    #     episodes_trained += ep_count
-
-    #     # Run a demo with visualization
-    #     env.disturbance_strength = 0
-    #     simulate(agent, env)
-    #     env.disturbance_strength = 0
-
-    # Run the PID agent (no training needed)
-    agent = PIDAgent()
-    env.disturbance_strength = 0
-    simulate(agent, env)
-    env.disturbance_strength = 0
+    elif agent_type == 'pid':
+        # Run the PID agent (no training needed)
+        agent = PIDAgent()
+        env.disturbance_strength = 0
+        simulate(agent, env)
+        env.disturbance_strength = 0
