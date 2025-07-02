@@ -112,7 +112,7 @@ def main(config):
     # Prepare the logging directory
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    exp_name  = f"{config.agent.type}_{timestamp}_{commit[:7]}"
+    exp_name  = f"{timestamp}_{config.agent.type}_{commit[:7]}"
     log_dir   = os.path.join(config.run.log_root, exp_name)
     os.makedirs(log_dir, exist_ok=True)
 

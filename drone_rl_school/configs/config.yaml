@@ -6,4 +6,3 @@ defaults:
 run:
   seed: 123
   log_root: logs
-  
