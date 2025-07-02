@@ -6,14 +6,14 @@ import torch
 
 
 class QNetwork(torch.nn.Module):
-    def __init__(self, state_dim, action_dim):
+    def __init__(self, state_dim, action_dim, cfg):
         super().__init__()
         self.neuralnet = torch.nn.Sequential(
-            torch.nn.Linear(state_dim, 64),
+            torch.nn.Linear(state_dim, cfg.agent.layer_1_nodes),
             torch.nn.ReLU(),
-            torch.nn.Linear(64, 64),
+            torch.nn.Linear(cfg.agent.layer_1_nodes, cfg.agent.layer_2_nodes),
             torch.nn.ReLU(),
-            torch.nn.Linear(64, action_dim)
+            torch.nn.Linear(cfg.agent.layer_2_nodes, action_dim)
         )
 
     def forward(self, x):
@@ -21,15 +21,15 @@ class QNetwork(torch.nn.Module):
 
 
 class ReplayBuffer:
-    def __init__(self, capacity=100_000):
-        self.buffer = deque(maxlen=capacity)
+    def __init__(self, cfg):
+        self.buffer = deque(maxlen=cfg.agent.buffer_capacity)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def push(self, obs, action, reward, next_obs, done):
         self.buffer.append((obs, action, reward, next_obs, done))
 
-    def sample(self, batch_size):
-        batch = random.sample(self.buffer, batch_size)
+    def sample(self, sample_size):
+        batch = random.sample(self.buffer, sample_size)
         o, a, r, o2, d = zip(*batch)
         return (
             torch.tensor(o, dtype=torch.float32, device=self.device),
@@ -44,10 +44,7 @@ class ReplayBuffer:
 
 
 class DQNAgent:
-    def __init__(self, vel_bins=16, delta_bins=16, 
-                 alpha=0.001, epsilon=0.1, gamma=0.99,
-                 alpha_min=0.005, epsilon_min=0.01,
-                 alpha_decay=0.9995, epsilon_decay=0.9995):
+    def __init__(self, cfg):
         # Definition of an observation:
         # vx, vy, vz, dx, dy, dz
         self.num_observations = 6
@@ -56,39 +53,34 @@ class DQNAgent:
         # 0:+x, 1:-x, 2:+y, 3:-y, 4:+z, 5:-z
         self.num_actions = 6
 
-        # Learning hyperparameters
-        self.alpha_0 = alpha
-        self.alpha = alpha    # one global learning rate
-        self.gamma = gamma  # discount factor
-        self.epsilon_0 = epsilon  # exploration factor
-        self.epsilon = epsilon
-        self.alpha_min = alpha_min
-        self.epsilon_min = epsilon_min
-        self.alpha_decay = alpha_decay
-        self.epsilon_decay = epsilon_decay
+        # Store the config
+        self.cfg = cfg
 
+        # Initialize
+        self.lr = self.cfg.agent.lr_start
+        self.epsilon = self.cfg.agent.epsilon_start
+
+        # Set a device to train on
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Q-table: (vel_x, vel_y, vel_z, delta_x, delta_y, delta_z, action) → Q-value
-        self.q_net = QNetwork(self.num_observations, self.num_actions).to(device)
+        self.q_net = QNetwork(self.num_observations, self.num_actions, cfg).to(device)
 
         # Target net
-        self.target_net = QNetwork(self.num_observations, self.num_actions).to(device)
+        self.target_net = QNetwork(self.num_observations, self.num_actions, cfg).to(device)
         self.target_net.load_state_dict(self.q_net.state_dict())
 
-        self.optimizer = torch.optim.Adam(self.q_net.parameters(), lr=self.alpha)
+        self.optimizer = torch.optim.Adam(self.q_net.parameters(), lr=self.cfg.agent.lr_start)
         
 
     def decay_epsilon(self, episodes):
-        self.epsilon = max(self.epsilon_min, self.epsilon_0 * self.epsilon_decay ** episodes)
+        self.epsilon = max(self.cfg.agent.epsilon_min, self.cfg.agent.epsilon_start * self.cfg.agent.epsilon_decay ** episodes)
 
 
     def decay_global_alpha(self, episodes):
-        # self.alpha = np.maximum(self.alpha_min, self.alpha_0 * self.alpha_decay ** episodes)
-
-        self.alpha = np.maximum(self.alpha_min, self.alpha_0 * self.alpha_decay ** episodes)
+        self.lr = np.maximum(self.cfg.agent.lr_min, self.cfg.agent.lr_start * self.cfg.agent.lr_global_decay ** episodes)
         for param_group in self.optimizer.param_groups:
-            param_group['lr'] = self.alpha
+            param_group['lr'] = self.lr
 
 
     def choose_action(self, observation):
@@ -103,13 +95,13 @@ class DQNAgent:
         return action
 
 
-    def update(self, buffer, batch_size):
-        states, actions, rewards, next_states, dones = buffer.sample(batch_size)
+    def update(self, buffer):
+        states, actions, rewards, next_states, dones = buffer.sample(self.cfg.agent.batch_size)
 
         # Compute targets
         with torch.no_grad():
             max_next_q = self.target_net(next_states).max(1, keepdim=True)[0]
-            targets = rewards + (1 - dones) * self.gamma * max_next_q
+            targets = rewards + (1 - dones) * self.cfg.agent.gamma * max_next_q
 
         # Compute loss
         current_q = self.q_net(states).gather(1, actions)
@@ -140,6 +132,7 @@ class DQNAgent:
 
 
     def load_model(self, model_name):
+        raise NotImplementedError
         self.q_table = np.load("q_table.npy")
 
         # Loading of the metadata not implemented

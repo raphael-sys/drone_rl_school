@@ -1,0 +1,3 @@
+wind_speed: 1.2           # m/s
+gust_variability: 0.3     # max gust delta (±)
+use_gusts: true

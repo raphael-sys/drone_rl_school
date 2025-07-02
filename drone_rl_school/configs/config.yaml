@@ -1,0 +1,9 @@
+defaults:
+  - _self_
+  - agent: dqn
+  - env: wind_env
+
+run:
+  seed: 123
+  log_root: logs
+  
