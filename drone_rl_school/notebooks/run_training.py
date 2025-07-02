@@ -33,8 +33,11 @@ def train(agent, env, writer, config,
                 buffer.push(obs, action, reward, next_obs, done)
 
             # The training
-            if len(buffer) >= config.agent.buffer_warmup_size:
+            if buffer is None:
+                agent.update(obs, action, reward, next_obs)
+            elif len(buffer) >= config.agent.buffer_warmup_size:
                 agent.update(buffer)
+
             
             obs = next_obs
             ep_rewards.append(reward)
@@ -66,7 +69,7 @@ def train(agent, env, writer, config,
         writer.add_scalar('alpha_sum', np.sum(agent.lr), episode)
 
         # Update target net
-        if episode % config.agent.target_update_freq == 0:
+        if config.agent.type == 'dqn' and episode % config.agent.target_update_freq == 0:
             agent.target_net.load_state_dict(agent.q_net.state_dict())
 
         # Print a training overview
@@ -127,26 +130,33 @@ def main(config):
     random_seed = config.env.random_number_generator_seed
     env = PointMassEnv(config, random_seed)
 
-    if config.agent.type == 'dqn':
-        agent = QLearningAgent(alpha_per_state=False)
-    
+    if config.agent.type == 'dqn':    
         agent = DQNAgent(config)
         buffer = ReplayBuffer(config)
 
         episodes_trained = 0
         best_score = float('-inf')
         while True:
-            env.disturbance_strength = 0
-            
             ep_count, rewards, best_score = train(agent, env, writer, config,
                             start_episode=episodes_trained, best_score=best_score,
                             buffer=buffer)
             episodes_trained += ep_count
 
             # Run a demo with visualization
-            env.disturbance_strength = 0
             simulate(agent, env)
-            env.disturbance_strength = 0
+
+    elif config.agent.type == 'q_learning':
+        agent = QLearningAgent(config)
+
+        episodes_trained = 0
+        best_score = float('-inf')
+        while True:
+            ep_count, rewards, best_score = train(agent, env, writer, config,
+                            start_episode=episodes_trained, best_score=best_score)
+            episodes_trained += ep_count
+
+            # Run a demo with visualization
+            simulate(agent, env)
 
     elif config.agent.type == 'pid':
         # Run the PID agent (no training needed)
