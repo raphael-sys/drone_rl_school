@@ -42,7 +42,7 @@ class PointMassEnv(gym.Env):
             self.stop_animation = True
 
 
-    def reset(self, goal=(5,5,5)):
+    def reset(self, goal=[5, 5, 5]):
         # Set the goal
         self.goal = np.array(goal, dtype=np.float32)
 
