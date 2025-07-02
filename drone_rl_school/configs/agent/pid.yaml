@@ -1,0 +1,7 @@
+# Descriptive properties
+type: pid
+
+# Parameters
+p: 0.1
+i: 0
+d: 0.1

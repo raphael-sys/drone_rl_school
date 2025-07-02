@@ -150,7 +150,7 @@ def main(config):
 
     elif config.agent.type == 'pid':
         # Run the PID agent (no training needed)
-        agent = PIDAgent()
+        agent = PIDAgent(config)
         env.disturbance_strength = 0
         simulate(agent, env)
         env.disturbance_strength = 0
