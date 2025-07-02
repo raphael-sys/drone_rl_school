@@ -7,12 +7,14 @@ import numpy as np
 class PointMassEnv(gym.Env):
     metadata = {'render.modes': ['human']}
     
-    def __init__(self, dt=0.1, max_steps=400, disturbance_strength=0.1):
+    def __init__(self, cfg, random_seed):
         super().__init__()
-        self.dt = dt
-        self.max_steps = max_steps
 
-        self.disturbance_strength = disturbance_strength
+        # Store the config
+        self.cfg = cfg
+
+        # Create a random number generator
+        self.rng = np.random.default_rng(random_seed)
 
         # Position: x,y,z
         self.pos = None
@@ -47,9 +49,9 @@ class PointMassEnv(gym.Env):
         self.goal = np.array(goal, dtype=np.float32)
 
         # Start at a random point around the origin and with zero velocity
-        self.pos = self.goal + (np.random.rand(3) * 10 - 5)   # +5 to -5 from the goal in each dimension
+        self.pos = self.goal + (self.rng.random(3) * 10 - 5)   # +5 to -5 from the goal in each dimension
         self.vel = np.zeros(3)
-        # self.vel = self.goal + (np.random.rand(3) * 2 - 1)   # +1 to -1 from 0 in each dimension
+        # self.vel = self.goal + (self.rng.random(3) * 2 - 1)   # +1 to -1 from 0 in each dimension
 
         # Reset the step count
         self.steps = 0
@@ -75,7 +77,7 @@ class PointMassEnv(gym.Env):
         elif dist > 18:   # Calculated to abort if distance is larger than [10, 10, 10]
             reward = -10_000
             done = True            
-        elif self.steps >= self.max_steps:
+        elif self.steps >= self.cfg.env.max_steps:
             reward = -dist 
             done = True
         else:
@@ -93,7 +95,8 @@ class PointMassEnv(gym.Env):
         return metric
 
     def disturbance_acc(self):
-        return np.random.rand(3) * self.disturbance_strength
+        # Generate random accelerations in each dimensions, this roughly simulates wind.
+        return self.rng.random(3) * self.cfg.env.disturbance_strength
 
     def step(self, action):
         # Get the acceleration from the selected action
@@ -103,8 +106,8 @@ class PointMassEnv(gym.Env):
         acc[idx] = sign * 1.0
 
         # Discrete physics of the movements
-        self.vel += (acc * self.dt + self.disturbance_acc() * self.dt)
-        self.pos += self.vel * self.dt
+        self.vel += (acc * self.cfg.env.dt + self.disturbance_acc() * self.cfg.env.dt)
+        self.pos += self.vel * self.cfg.env.dt
         self.steps += 1
 
         # Calculate the reward

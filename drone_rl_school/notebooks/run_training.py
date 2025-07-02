@@ -124,7 +124,8 @@ def main(config):
     writer = SummaryWriter(log_dir)    # run in terminal: "tensorboard --logdir=runs", address: http://localhost:6006
 
     # Set up the environment
-    env = PointMassEnv()   # TODO: Add the parameters from the config, some functions need to be implemented. Pay attention to externalize any randomnes into the config.
+    random_seed = config.env.random_number_generator_seed
+    env = PointMassEnv(config, random_seed)
 
     if config.agent.type == 'dqn':
         agent = QLearningAgent(alpha_per_state=False)
