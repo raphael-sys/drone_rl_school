@@ -105,12 +105,13 @@ def main(cfg):
     random_seed = cfg.env.random_number_generator_seed
     env = PointMassEnv(cfg, random_seed)
 
+    next_episode_to_train = 0
+    best_score = float('-inf')
+
     if cfg.agent.type == 'dqn':    
         agent = DQNAgent(cfg)
         buffer = ReplayBuffer(cfg)
 
-        next_episode_to_train = 0
-        best_score = float('-inf')
         while True:
             ep_count, rewards, best_score = train(agent, env, writer, cfg,
                             start_episode=next_episode_to_train, best_score=best_score,
@@ -123,8 +124,6 @@ def main(cfg):
     elif cfg.agent.type == 'q_learning':
         agent = QLearningAgent(cfg)
 
-        next_episode_to_train = 0
-        best_score = float('-inf')
         while True:
             last_episode, rewards, best_score = train(agent, env, writer, cfg,
                             start_episode=next_episode_to_train, best_score=best_score)
@@ -136,9 +135,7 @@ def main(cfg):
     elif cfg.agent.type == 'pid':
         # Run the PID agent (no training needed)
         agent = PIDAgent(cfg)
-        env.disturbance_strength = 0
         env.simulate(agent)
-        env.disturbance_strength = 0
 
 
 if __name__ == '__main__':
