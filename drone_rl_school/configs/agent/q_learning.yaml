@@ -1,0 +1,32 @@
+# Descriptive properties
+type: q_learning
+
+# Episodes
+episodes_to_train: 250
+
+# Specific learning rate decay method
+alpha_per_state: false
+
+# Discretization
+vel_bins: 16
+delta_bins: 16
+
+# Training meta
+batch_size: 32
+target_update_freq: 4
+
+# Network
+layer_1_nodes: 64
+layer_2_nodes: 64
+
+# Training
+lr_start: 1.0
+lr_min: 0.005
+epsilon_start: 1.0
+epsilon_min: 0.01
+gamma: 0.99
+
+# Decays
+epsilon_decay: 0.9995
+lr_global_decay: 0.9995
+lr_individual_decay: false

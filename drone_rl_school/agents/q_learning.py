@@ -2,60 +2,48 @@ import json
 import numpy as np
 
 class QLearningAgent:
-    def __init__(self, vel_bins=16, delta_bins=16, 
-                 alpha=1.0, epsilon=1.0, gamma=0.99,
-                 alpha_min=0.005, epsilon_min=0.01,
-                 alpha_decay=0.9995, epsilon_decay=0.9995,
-                 alpha_per_state=False):
+    def __init__(self, cfg):
         # Definition of an observation:
         # vx, vy, vz, dx, dy, dz
-
-        # The number of bins per observation dimension
-        self.vel_bins = vel_bins
-        self.delta_bins = delta_bins
 
         # Define action space: 
         # 0:+x, 1:-x, 2:+y, 3:-y, 4:+z, 5:-z
         self.num_actions = 6
 
-        # Learning hyperparameters
-        self.alpha_0 = alpha
-        self.alpha_per_state = alpha_per_state
-        if self.alpha_per_state:
-            self.alpha = np.full((self.vel_bins, self.vel_bins, self.vel_bins, 
-                                    self.delta_bins, self.delta_bins, self.delta_bins, 
-                                    self.num_actions), alpha)  # learning rate for each state action pair
+        # Store the config
+        self.cfg = cfg
+
+        # Learning rate
+        if self.cfg.agent.alpha_per_state:
+            self.lr = np.full((self.cfg.agent.vel_bins, self.cfg.agent.vel_bins, self.cfg.agent.vel_bins, 
+                                    self.cfg.agent.delta_bins, self.cfg.agent.delta_bins, self.cfg.agent.delta_bins, 
+                                    self.num_actions), self.cfg.agent.lr_start)  # learning rate for each state action pair
         else:
-            self.alpha = alpha    # one global learning rate
-        self.gamma = gamma  # discount factor
-        self.epsilon_0 = epsilon  # exploration factor
-        self.epsilon = epsilon
-        self.alpha_min = alpha_min
-        self.epsilon_min = epsilon_min
-        self.alpha_decay = alpha_decay
-        self.epsilon_decay = epsilon_decay
+            self.lr = self.cfg.agent.lr_start    # one global learning rate
+
+        self.epsilon = self.cfg.agent.epsilon_start
 
         # Q-table: (vel_x, vel_y, vel_z, delta_x, delta_y, delta_z, action) → Q-value
-        self.q_table = np.zeros((self.vel_bins, self.vel_bins, self.vel_bins, 
-                                 self.delta_bins, self.delta_bins, self.delta_bins, 
+        self.q_table = np.zeros((self.cfg.agent.vel_bins, self.cfg.agent.vel_bins, self.cfg.agent.vel_bins, 
+                                 self.cfg.agent.delta_bins, self.cfg.agent.delta_bins, self.cfg.agent.delta_bins, 
                                  self.num_actions))
 
-        self.visit_count = np.zeros((self.vel_bins, self.vel_bins, self.vel_bins, 
-                                 self.delta_bins, self.delta_bins, self.delta_bins, 
+        self.visit_count = np.zeros((self.cfg.agent.vel_bins, self.cfg.agent.vel_bins, self.cfg.agent.vel_bins, 
+                                 self.cfg.agent.delta_bins, self.cfg.agent.delta_bins, self.cfg.agent.delta_bins, 
                                  self.num_actions))
         
 
     def decay_epsilon(self, episodes):
-        self.epsilon = max(self.epsilon_min, self.epsilon_0 * self.epsilon_decay ** episodes)
+        self.epsilon = max(self.cfg.agent.epsilon_min, self.cfg.agent.epsilon_start * self.cfg.agent.epsilon_decay ** episodes)
 
 
     def decay_individual_alpha(self):
-        adapted_decay_rate = np.power(self.alpha_0, self.visit_count)
-        self.alpha = np.maximum(self.alpha_min, self.alpha_0 * adapted_decay_rate)
+        adapted_decay_rate = np.power(self.cfg.agent.lr_start, self.visit_count)
+        self.lr = np.maximum(self.cfg.agent.lr_min, self.cfg.agent.lr_start * adapted_decay_rate)
 
 
     def decay_global_alpha(self, episodes):
-        self.alpha = np.maximum(self.alpha_min, self.alpha_0 * self.alpha_decay ** episodes)
+        self.lr = np.maximum(self.cfg.agent.lr_min, self.cfg.agent.lr_start * self.cfg.agent.lr_global_decay ** episodes)
 
 
     def to_bin(_, val, bins, max_abs=10.0, method='log'):
@@ -79,7 +67,7 @@ class QLearningAgent:
         # Get the bin for each observation element
         return [
             self.to_bin(s, bin_count, method='linear')
-            for s, bin_count in zip(obs, [self.vel_bins] * 3 + [self.delta_bins] * 3)
+            for s, bin_count in zip(obs, [self.cfg.agent.vel_bins] * 3 + [self.cfg.agent.delta_bins] * 3)
         ]
 
 
@@ -93,7 +81,7 @@ class QLearningAgent:
         return np.argmax(self.q_table[*discretized_obs, :])
 
 
-    def update(self, obs, action, reward, next_obs, alpha_individual_decay):
+    def update(self, obs, action, reward, next_obs):
         discretized_obs = self.discretize_obs(obs)
         discretized_next_obs = self.discretize_obs(next_obs)
 
@@ -101,29 +89,30 @@ class QLearningAgent:
         max_next_q = np.max(self.q_table[*discretized_next_obs])
 
         # Q-learning update rule
-        if self.alpha_per_state:
+        if self.cfg.agent.alpha_per_state:
             self.q_table[*discretized_obs, action] = \
-                current_q + self.alpha[*discretized_obs, action] * (reward + self.gamma * max_next_q - current_q)
+                current_q + self.lr[*discretized_obs, action] * (reward + self.cfg.agent.gamma * max_next_q - current_q)
         else:
             self.q_table[*discretized_obs, action] = \
-                current_q + self.alpha * (reward + self.gamma * max_next_q - current_q)
+                current_q + self.lr * (reward + self.cfg.agent.gamma * max_next_q - current_q)
 
         # Count the visits per state action pair
         self.visit_count[*discretized_obs, action] += 1
 
     
     def save_model(self, score, episode):
+        raise NotImplementedError
         np.save(f"best_models/q_table_score_{score}_q_table.npy", self.q_table)
         metadata = {
             "score": score,
             "episodes": episode,
-            "delta_bins": self.delta_bins, 
-            "vel_bins": self.vel_bins, 
-            "agent": self.alpha, 
+            "delta_bins": self.cfg.agent.delta_bins, 
+            "vel_bins": self.cfg.agent.vel_bins, 
+            "agent": self.lr, 
             "epsilon": self.epsilon, 
-            "alpha_min": self.alpha_min, 
-            "epsilon_min": self.epsilon_min, 
-            "alpha_decay": self.alpha_decay, 
+            "alpha_min": self.cfg.agent.lr_min, 
+            "epsilon_min": self.cfg.agent.epsilon_min, 
+            "alpha_decay": self.cfg.agent.lr_global_decay, 
             "epsilon_decay": self.epsilon_decay,
             }
         with open(f"best_models/q_table_score_{score}_metadata.json", "w") as f:
@@ -131,6 +120,7 @@ class QLearningAgent:
 
 
     def load_model(self, model_name):
+        raise NotImplementedError
         self.q_table = np.load("q_table.npy")
 
         # Loading of the metadata not implemented

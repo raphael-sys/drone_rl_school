@@ -12,4 +12,7 @@
 
 # Ignore training logs and stored models
 runs/*
+logs/*
+drone_rl_school/notebooks/logs*
+outputs/*
 best_models/*

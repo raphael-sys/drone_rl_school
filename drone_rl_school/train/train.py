@@ -1,15 +1,4 @@
-import hydra
-from drone_rl_school.agents.dqn import DQNAgent, ReplayBuffer
-from drone_rl_school.agents.pid import PIDAgent
-from drone_rl_school.envs.point_mass_env import PointMassEnv
-from drone_rl_school.agents.q_learning import QLearningAgent
 import numpy as np
-import matplotlib.pyplot as plt
-from datetime import datetime
-from omegaconf import OmegaConf
-import os
-import subprocess
-from torch.utils.tensorboard import SummaryWriter
 
 
 def train(agent, env, writer, cfg,
@@ -83,60 +72,3 @@ def train(agent, env, writer, cfg,
                 print(f"New best agent saved.")
 
     return current_episode, rewards, best_score
-
-
-@hydra.main(config_path="../configs", config_name="config", version_base=None)
-def main(cfg):
-    # Prepare the logging directory
-    commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    exp_name  = f"{timestamp}_{cfg.agent.type}_{commit[:7]}"
-    log_dir   = os.path.join(cfg.run.log_root, exp_name)
-    os.makedirs(log_dir, exist_ok=True)
-
-    # Save a frozen copy of the config
-    with open(os.path.join(log_dir, "config.yaml"), "w") as fp:
-        fp.write(OmegaConf.to_yaml(cfg))
-
-    # Create the actual tensorboard logger
-    writer = SummaryWriter(log_dir)    # run in terminal: "tensorboard --logdir=runs", address: http://localhost:6006
-
-    # Set up the environment
-    random_seed = cfg.env.random_number_generator_seed
-    env = PointMassEnv(cfg, random_seed)
-
-    next_episode_to_train = 0
-    best_score = float('-inf')
-
-    if cfg.agent.type == 'dqn':    
-        agent = DQNAgent(cfg)
-        buffer = ReplayBuffer(cfg)
-
-        while True:
-            ep_count, rewards, best_score = train(agent, env, writer, cfg,
-                            start_episode=next_episode_to_train, best_score=best_score,
-                            buffer=buffer)
-            next_episode_to_train += ep_count
-
-            # Run a demo with visualization
-            env.simulate_and_plot(agent)
-
-    elif cfg.agent.type == 'q_learning':
-        agent = QLearningAgent(cfg)
-
-        while True:
-            last_episode, rewards, best_score = train(agent, env, writer, cfg,
-                            start_episode=next_episode_to_train, best_score=best_score)
-            next_episode_to_train = last_episode + 1
-
-            # Run a demo with visualization
-            env.simulate_and_plot(agent)
-
-    elif cfg.agent.type == 'pid':
-        # Run the PID agent (no training needed)
-        agent = PIDAgent(cfg)
-        env.simulate_and_plot(agent)
-
-
-if __name__ == '__main__':
-    main()

@@ -1,0 +1,29 @@
+# Descriptive properties
+type: dqn
+
+# Episodes
+episodes_to_train: 200
+
+# Buffer
+buffer_capacity: 100000
+buffer_warmup_size: 1000
+
+# Training meta
+batch_size: 32
+target_update_freq: 4
+
+# Network
+layer_1_nodes: 64
+layer_2_nodes: 64
+
+# Training
+lr_start: 0.001
+lr_min: 0.005
+epsilon_start: 0.1
+epsilon_min: 0.01
+gamma: 0.99
+
+# Decays
+epsilon_decay: 0.9995
+lr_global_decay: 0.9995
+lr_individual_decay: false

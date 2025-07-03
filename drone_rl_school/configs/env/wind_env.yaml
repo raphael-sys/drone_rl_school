@@ -1,0 +1,9 @@
+# General settings
+dt: 0.1
+max_steps: 400
+
+# Seed for random number generator
+random_number_generator_seed: 3984
+
+# Wind as a disturbance
+disturbance_strength: 0.1
