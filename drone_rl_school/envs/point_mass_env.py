@@ -159,7 +159,7 @@ class PointMassEnv(gym.Env):
         print(f'Simulated Episode    Total Reward: {ep_reward}')
         return trajectory
 
-    def animate(self, trajectories, goal):
+    def animate(self, trajectories, goal, trajectory_names):
         # Format the data for easier handling
         trajectories = [np.array(t) for t in trajectories]
         # Determine the maximum length over all trajectories
@@ -210,10 +210,10 @@ class PointMassEnv(gym.Env):
         scatters_xy, lines_xy = [], []
         scatters_xz, lines_xz = [], []
         scatters_yz, lines_yz = [], []
-        for i, traj in enumerate(trajectories):
+        for i, (traj, traj_name) in enumerate(zip(trajectories, trajectory_names)):
             c = colors[i % len(colors)]
             # 3D scatter and history line
-            scat = ax3d.scatter(*traj[0], color=c, s=50)
+            scat = ax3d.scatter(*traj[0], color=c, s=50, label=traj_name)
             line, = ax3d.plot([traj[0,0]], [traj[0,1]], [traj[0,2]],
                             color=c, alpha=0.3)
             scatters_3d.append(scat); lines_3d.append(line)
