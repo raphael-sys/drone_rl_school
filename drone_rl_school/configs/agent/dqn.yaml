@@ -2,7 +2,7 @@
 type: dqn
 
 # Episodes
-episodes_to_train: 250
+episodes_to_train: 200
 
 # Buffer
 buffer_capacity: 100000

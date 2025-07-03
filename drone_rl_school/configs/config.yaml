@@ -1,8 +1,7 @@
 defaults:
   - _self_
-  - agent: q_learning
+  - agent: dqn
   - env: wind_env
 
 run:
-  seed: 123
   log_root: logs
