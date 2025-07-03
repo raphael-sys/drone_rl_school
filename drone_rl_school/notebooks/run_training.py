@@ -134,13 +134,13 @@ def main(config):
         agent = DQNAgent(config)
         buffer = ReplayBuffer(config)
 
-        episodes_trained = 0
+        next_episode_to_train = 0
         best_score = float('-inf')
         while True:
             ep_count, rewards, best_score = train(agent, env, writer, config,
-                            start_episode=episodes_trained, best_score=best_score,
+                            start_episode=next_episode_to_train, best_score=best_score,
                             buffer=buffer)
-            episodes_trained += ep_count
+            next_episode_to_train += ep_count
 
             # Run a demo with visualization
             simulate(agent, env)
@@ -148,12 +148,12 @@ def main(config):
     elif config.agent.type == 'q_learning':
         agent = QLearningAgent(config)
 
-        episodes_trained = 0
+        next_episode_to_train = 0
         best_score = float('-inf')
         while True:
-            ep_count, rewards, best_score = train(agent, env, writer, config,
-                            start_episode=episodes_trained, best_score=best_score)
-            episodes_trained += ep_count
+            last_episode, rewards, best_score = train(agent, env, writer, config,
+                            start_episode=next_episode_to_train, best_score=best_score)
+            next_episode_to_train = last_episode + 1
 
             # Run a demo with visualization
             simulate(agent, env)
