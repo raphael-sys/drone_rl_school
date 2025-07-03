@@ -85,31 +85,6 @@ def train(agent, env, writer, config,
     return episode, rewards, best_score
 
 
-def simulate(agent, env, episodes=1):
-    for ep in range(episodes):
-        if hasattr(agent, 'alpha'):
-            print(f'Current learning rate (mean): {np.mean(agent.lr)}')
-        if hasattr(agent, 'epsilon'):
-            print(f'Current exploration rate: {agent.epsilon}')
-        obs = env.reset()
-        done = False
-        ep_reward = 0
-        while not done:
-            action = agent.choose_action(obs)
-            obs, r, done, _ = env.step(action)
-            env.render()
-            ep_reward += r
-            # End simulation on 'q' key press
-            if env.stop_animation:
-                env.stop_animation = False
-                break
-        plt.close(env.fig)
-        env.fig = None
-        env.ax = None
-        plt.ioff()
-        print(f'Simulated Episode    Total Reward: {ep_reward}')
-
-
 @hydra.main(config_path="../configs", config_name="config", version_base=None)
 def main(config):
     # Prepare the logging directory

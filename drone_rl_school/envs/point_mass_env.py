@@ -115,6 +115,25 @@ class PointMassEnv(gym.Env):
 
         return self._get_obs(), reward, done, {}
 
+    def simulate(self, agent, episodes=1):
+        for ep in range(episodes):
+            obs = self.reset()
+            done = False
+            ep_reward = 0
+            while not done:
+                action = agent.choose_action(obs)
+                obs, r, done, _ = self.step(action)
+                self.render()
+                ep_reward += r
+                # End simulation on 'q' key press
+                if self.stop_animation:
+                    self.stop_animation = False
+                    break
+            plt.close(self.fig)
+            self.fig = None
+            self.ax = None
+            plt.ioff()
+            print(f'Simulated Episode    Total Reward: {ep_reward}')
 
     def render(self, mode='human'):
         # Initialize plot
