@@ -159,89 +159,124 @@ class PointMassEnv(gym.Env):
         print(f'Simulated Episode    Total Reward: {ep_reward}')
         return trajectory
 
-    def animate(self, trajectory, goal):
-        max_frames = len(trajectory)
+    def animate(self, trajectories, goal):
+        # Format the data for easier handling
+        trajectories = [np.array(t) for t in trajectories]
+        # Determine the maximum length over all trajectories
+        max_frames = max(len(traj) for traj in trajectories)
 
-        # Set up the figure
+        # Prepare figure and subplots
         fig = plt.figure(figsize=(12, 8))
         fig.canvas.mpl_connect('key_press_event', self.on_key_press)
-        
-        # Define grid: 3 rows × 4 columns
-        gs = gridspec.GridSpec(3, 4, width_ratios=[3, 1, 1, 1], height_ratios=[1, 1, 1])
+        gs = gridspec.GridSpec(3, 4, width_ratios=[3,1,1,1], height_ratios=[1,1,1])
 
-        # 3D view
+        # 3D main view
         ax3d = fig.add_subplot(gs[:, :3], projection='3d')
         ax3d.set_title('3D View')
-        ax3d.set_xlim(goal[0] - 10, goal[0] + 10)
-        ax3d.set_ylim(goal[1] - 10, goal[1] + 10)
-        ax3d.set_zlim(goal[2] - 10, goal[2] + 10)
+        ax3d.set_xlim(goal[0]-10, goal[0]+10)
+        ax3d.set_ylim(goal[1]-10, goal[1]+10)
+        ax3d.set_zlim(goal[2]-10, goal[2]+10)
         ax3d.scatter(*goal, color='red', s=100, label='Goal')
-        plot_3d_pos = ax3d.scatter(*trajectory[0], color='blue', s=50, label='Drone')
-        ax3d.legend(loc='upper left')
-        # XY plane
+
+        # Projections
+        def make_plane(ax, xlabel, ylabel, xlim, ylim, goal_pt):
+            ax.set_xlim(*xlim)
+            ax.set_ylim(*ylim)
+            ax.scatter(*goal_pt, color='red', s=80)
+            ax.xaxis.grid(); ax.yaxis.grid()
+            ax.set_xlabel(xlabel); ax.set_ylabel(ylabel)
         ax_xy = fig.add_subplot(gs[0, 3])
         ax_xy.set_title('XY Projection')
-        ax_xy.set_xlim(goal[0] - 10, goal[0] + 10)
-        ax_xy.set_ylim(goal[1] - 10, goal[1] + 10)
-        ax_xy.scatter(goal[0], goal[1], color='red', s=80)
-        plot_xy_pos = ax_xy.scatter(trajectory[0][0], trajectory[0][1], color='blue', s=40)
-        ax_xy.xaxis.grid(); ax_xy.yaxis.grid()
-        ax_xy.set_xlabel('X'); ax_xy.set_ylabel('Y')
-        # XZ plane
+        make_plane(ax_xy, 'X', 'Y',
+                (goal[0]-10, goal[0]+10),
+                (goal[1]-10, goal[1]+10),
+                (goal[0], goal[1]))
         ax_xz = fig.add_subplot(gs[1, 3])
         ax_xz.set_title('XZ Projection')
-        ax_xz.set_xlim(goal[0] - 10, goal[0] + 10)
-        ax_xz.set_ylim(goal[2] - 10, goal[2] + 10)
-        ax_xz.scatter(goal[0], goal[2], color='red', s=80)
-        plot_xz_pos = ax_xz.scatter(trajectory[0][0], trajectory[0][2], color='blue', s=40)
-        ax_xz.xaxis.grid(); ax_xz.yaxis.grid()
-        ax_xz.set_xlabel('X'); ax_xz.set_ylabel('Z')
-        # YZ plane
+        make_plane(ax_xz, 'X', 'Z',
+                (goal[0]-10, goal[0]+10),
+                (goal[2]-10, goal[2]+10),
+                (goal[0], goal[2]))
         ax_yz = fig.add_subplot(gs[2, 3])
         ax_yz.set_title('YZ Projection')
-        ax_yz.set_xlim(goal[1] - 10, goal[1] + 10)
-        ax_yz.set_ylim(goal[2] - 10, goal[2] + 10)
-        ax_yz.scatter(goal[1], goal[2], color='red', s=80)
-        plot_yz_pos = ax_yz.scatter(trajectory[0][1], trajectory[0][2], color='blue', s=40)
-        ax_yz.xaxis.grid();ax_yz.yaxis.grid()
-        ax_yz.set_xlabel('Y'); ax_yz.set_ylabel('Z')
+        make_plane(ax_yz, 'Y', 'Z',
+                (goal[1]-10, goal[1]+10),
+                (goal[2]-10, goal[2]+10),
+                (goal[1], goal[2]))
 
+        # Prepare plot objects for each trajectory
+        colors = plt.cm.tab10.colors
+        scatters_3d, lines_3d = [], []
+        scatters_xy, lines_xy = [], []
+        scatters_xz, lines_xz = [], []
+        scatters_yz, lines_yz = [], []
+        for i, traj in enumerate(trajectories):
+            c = colors[i % len(colors)]
+            # 3D scatter and history line
+            scat = ax3d.scatter(*traj[0], color=c, s=50)
+            line, = ax3d.plot([traj[0,0]], [traj[0,1]], [traj[0,2]],
+                            color=c, alpha=0.3)
+            scatters_3d.append(scat); lines_3d.append(line)
+            # XY
+            scat_xy = ax_xy.scatter(traj[0,0], traj[0,1], color=c, s=40)
+            line_xy, = ax_xy.plot([traj[0,0]], [traj[0,1]], color=c, alpha=0.3)
+            scatters_xy.append(scat_xy); lines_xy.append(line_xy)
+            # XZ
+            scat_xz = ax_xz.scatter(traj[0,0], traj[0,2], color=c, s=40)
+            line_xz, = ax_xz.plot([traj[0,0]], [traj[0,2]], color=c, alpha=0.3)
+            scatters_xz.append(scat_xz); lines_xz.append(line_xz)
+            # YZ
+            scat_yz = ax_yz.scatter(traj[0,1], traj[0,2], color=c, s=40)
+            line_yz, = ax_yz.plot([traj[0,1]], [traj[0,2]], color=c, alpha=0.3)
+            scatters_yz.append(scat_yz); lines_yz.append(line_yz)
+
+        ax3d.legend(loc='upper left')
         plt.tight_layout()
         plt.ion()
 
-        # Update the view
         def update(frame):
-            # 3D axis
-            plot_3d_pos._offsets3d = ([trajectory[frame][0]], [trajectory[frame][1]], [trajectory[frame][2]])
-            dist = np.linalg.norm(goal - trajectory[frame])
+            for i, traj in enumerate(trajectories):
+                # if this traj is shorter, clamp idx and reduce alpha on current point
+                idx = min(frame, len(traj)-1)
+                point_alpha = 0.4 if frame >= len(traj) else 1.0
+
+                # update 3D scatter
+                scatters_3d[i]._offsets3d = (
+                    [traj[idx,0]], [traj[idx,1]], [traj[idx,2]]
+                )
+                scatters_3d[i].set_alpha(point_alpha)
+                # update 3D history line
+                hist = traj[:idx+1]
+                lines_3d[i].set_data(hist[:,0], hist[:,1])
+                lines_3d[i].set_3d_properties(hist[:,2])
+
+                # XY
+                scatters_xy[i].set_offsets([[traj[idx,0], traj[idx,1]]])
+                scatters_xy[i].set_alpha(point_alpha)
+                lines_xy[i].set_data(traj[:idx+1,0], traj[:idx+1,1])
+
+                # XZ
+                scatters_xz[i].set_offsets([[traj[idx,0], traj[idx,2]]])
+                scatters_xz[i].set_alpha(point_alpha)
+                lines_xz[i].set_data(traj[:idx+1,0], traj[:idx+1,2])
+
+                # YZ
+                scatters_yz[i].set_offsets([[traj[idx,1], traj[idx,2]]])
+                scatters_yz[i].set_alpha(point_alpha)
+                lines_yz[i].set_data(traj[:idx+1,1], traj[:idx+1,2])
+
+            # update title with distance of first traj
+            dist = np.linalg.norm(goal - trajectories[0][min(frame, len(trajectories[0])-1)])
             ax3d.set_title(f'3D  |  Step {frame:03d}  |  Dist {dist:.2f}')
 
-            # XY projection
-            plot_xy_pos.set_offsets([trajectory[frame][0], trajectory[frame][1]])
-
-            # XZ projection
-            plot_xz_pos.set_offsets([trajectory[frame][0], trajectory[frame][2]])
-
-            # YZ projection
-            plot_yz_pos.set_offsets([trajectory[frame][1], trajectory[frame][2]])
-
-        # Buttons
+        # Play widget
         play = Play(
-            value=0,
-            min=0,
-            max=max_frames-1,
-            step=1,
-            interval=250,       # milliseconds between frames
-            description="▶️",
-            disabled=False
+            value=0, min=0, max=max_frames-1, step=1,
+            interval=250, description="▶️"
         )
-
-        # Link the animation to the play button
         play.observe(lambda ev: update(ev['new']), names='value')
 
-        # Show the viewer
         display(VBox([play]))
-        # Trigger initial draw
         update(0)
 
     def render(self, mode='human'):
