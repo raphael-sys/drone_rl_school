@@ -69,20 +69,23 @@ class PointMassEnv(gym.Env):
         
         dist = np.linalg.norm(self.goal - self.pos)
         vel_norm = np.linalg.norm(self.vel)
-        # reward = -dist**2 - 0.1 * np.linalg.norm(self.vel)
+
+        proximity_bonus = 1 / dist
+
+        per_step_punishment = -10
 
         # End if goal is approximately reached or too many steps
-        if dist < 0.1 and vel_norm < 0.1:   # Calculated to abort if distance and velocity is smaller than e.g. [0.1, 0.1, 0.1]
-            reward = 10_000
+        if dist < 0.05 and vel_norm < 0.1:   # Calculated to abort if distance and velocity is smaller than e.g. [0.1, 0.1, 0.1]
+            reward = 1_000_000
             done = True
         elif dist > 18:   # Calculated to abort if distance is larger than [10, 10, 10]
-            reward = -10_000
+            reward = -1_000_000
             done = True            
         elif self.steps >= self.cfg.env.max_steps:
-            reward = -dist 
+            reward = -dist**2 + proximity_bonus
             done = True
         else:
-            reward = -dist 
+            reward = -dist**2 + proximity_bonus
             done = False
 
         return done, reward
