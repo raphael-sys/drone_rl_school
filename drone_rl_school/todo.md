@@ -1,15 +1,15 @@
-# Upcoming tasks
+# TODOs
 
-### Improve existing RL methods
-- the LR adaption currently has a local and global version
-- adaption of LR and Epsilon are currently not used but instead decrease really slowly (really just a constant value)
-    - fix and implement cleanly
-    - evaluate effect of this change
+## Upcoming tasks
 
 ### Improve the reward function for dqn
 - reward for dqn currently does not work for values really close to the target
     - fix and evaluate
     - try to beat or compare to pid agent
+
+### Integrate other RL pipeline components
+- integrate the StableBaselines3 library as a selectable agent
+- implement automatic parameter sweeps and run some grid searches
 
 ### Make world more realistic and prepare for new features
 - allow for accelerations/actions in all directions simultaniously (not just one direction per step)
@@ -29,3 +29,10 @@
 ### Test out more RL techniques
 - try out new and more advanced techniques
 
+## Done tasks
+
+### Improve existing RL methods
+- the LR adaption currently has a local and global version
+- adaption of LR and Epsilon are currently not used but instead decrease really slowly (really just a constant value)
+    - fix and implement cleanly
+    - evaluate effect of this change
