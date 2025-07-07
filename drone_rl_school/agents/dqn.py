@@ -77,8 +77,8 @@ class DQNAgent:
         self.epsilon = max(self.cfg.agent.epsilon_min, self.cfg.agent.epsilon_start * self.cfg.agent.epsilon_decay ** episodes)
 
 
-    def decay_global_alpha(self, episodes):
-        self.lr = np.maximum(self.cfg.agent.lr_min, self.cfg.agent.lr_start * self.cfg.agent.lr_global_decay ** episodes)
+    def decay_alpha(self, episodes):
+        self.lr = np.maximum(self.cfg.agent.lr_min, self.cfg.agent.lr_start * self.cfg.agent.lr_decay ** episodes)
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = self.lr
 
@@ -115,18 +115,6 @@ class DQNAgent:
     def save_model(self, score, episode):
         raise NotImplementedError
         np.save(f"best_models/q_table_score_{score}_q_table.npy", self.q_table)
-        metadata = {
-            "score": score,
-            "episodes": episode,
-            "delta_bins": self.delta_bins, 
-            "vel_bins": self.vel_bins, 
-            "agent": self.alpha, 
-            "epsilon": self.epsilon, 
-            "alpha_min": self.alpha_min, 
-            "epsilon_min": self.epsilon_min, 
-            "alpha_decay": self.alpha_decay, 
-            "epsilon_decay": self.epsilon_decay,
-            }
         with open(f"best_models/q_table_score_{score}_metadata.json", "w") as f:
             json.dump(metadata, f)
 

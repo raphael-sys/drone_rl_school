@@ -28,5 +28,4 @@ gamma: 0.99
 
 # Decays
 epsilon_decay: 0.9995
-lr_global_decay: 0.9995
-lr_individual_decay: false
+lr_decay: 0.9995

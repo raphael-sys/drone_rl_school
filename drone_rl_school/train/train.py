@@ -42,10 +42,8 @@ def train(agent, env, writer, cfg,
         # Run the requested per episode decays
         if cfg.agent.epsilon_decay:
             agent.decay_epsilon(current_episode)
-        if cfg.agent.lr_global_decay:
-            agent.decay_global_alpha(current_episode)
-        if cfg.agent.lr_individual_decay:
-            agent.decay_individual_alpha()
+        if cfg.agent.lr_decay:
+            agent.decay_alpha(current_episode)
 
         # Log values
         writer.add_scalar('metric', metrics[-1], current_episode)

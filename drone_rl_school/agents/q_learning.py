@@ -13,14 +13,8 @@ class QLearningAgent:
         # Store the config
         self.cfg = cfg
 
-        # Learning rate
-        if self.cfg.agent.alpha_per_state:
-            self.lr = np.full((self.cfg.agent.vel_bins, self.cfg.agent.vel_bins, self.cfg.agent.vel_bins, 
-                                    self.cfg.agent.delta_bins, self.cfg.agent.delta_bins, self.cfg.agent.delta_bins, 
-                                    self.num_actions), self.cfg.agent.lr_start)  # learning rate for each state action pair
-        else:
-            self.lr = self.cfg.agent.lr_start    # one global learning rate
-
+        # Learning rate and exploration factor
+        self.lr = self.cfg.agent.lr_start
         self.epsilon = self.cfg.agent.epsilon_start
 
         # Q-table: (vel_x, vel_y, vel_z, delta_x, delta_y, delta_z, action) → Q-value
@@ -37,13 +31,8 @@ class QLearningAgent:
         self.epsilon = max(self.cfg.agent.epsilon_min, self.cfg.agent.epsilon_start * self.cfg.agent.epsilon_decay ** episodes)
 
 
-    def decay_individual_alpha(self):
-        adapted_decay_rate = np.power(self.cfg.agent.lr_start, self.visit_count)
-        self.lr = np.maximum(self.cfg.agent.lr_min, self.cfg.agent.lr_start * adapted_decay_rate)
-
-
-    def decay_global_alpha(self, episodes):
-        self.lr = np.maximum(self.cfg.agent.lr_min, self.cfg.agent.lr_start * self.cfg.agent.lr_global_decay ** episodes)
+    def decay_alpha(self, episodes):
+        self.lr = np.maximum(self.cfg.agent.lr_min, self.cfg.agent.lr_start * self.cfg.agent.lr_decay ** episodes)
 
 
     def to_bin(_, val, bins, max_abs=10.0, method='log'):
@@ -103,18 +92,6 @@ class QLearningAgent:
     def save_model(self, score, episode):
         raise NotImplementedError
         np.save(f"best_models/q_table_score_{score}_q_table.npy", self.q_table)
-        metadata = {
-            "score": score,
-            "episodes": episode,
-            "delta_bins": self.cfg.agent.delta_bins, 
-            "vel_bins": self.cfg.agent.vel_bins, 
-            "agent": self.lr, 
-            "epsilon": self.epsilon, 
-            "alpha_min": self.cfg.agent.lr_min, 
-            "epsilon_min": self.cfg.agent.epsilon_min, 
-            "alpha_decay": self.cfg.agent.lr_global_decay, 
-            "epsilon_decay": self.epsilon_decay,
-            }
         with open(f"best_models/q_table_score_{score}_metadata.json", "w") as f:
             json.dump(metadata, f)
 
