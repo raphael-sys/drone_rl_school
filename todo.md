@@ -5,7 +5,11 @@
 ### Introduce pytest as a testing framework
 - install and set up pytest
 - write a few tests for basic components and run them
-- (integrate the tests into an automatic CI/CI setup)
+- (maybe even integrate the tests into an automatic CI/CD setup)
+
+### (Integrate a CI/CD setup)
+- involve steps like linter, formatter, testing and so on (see also https://github.com/DLR-RM/stable-baselines3/blob/master/CONTRIBUTING.md and GPT conversation 'why use pytest')
+- maybe use tox for this
 
 ### Integrate other RL pipeline components
 - integrate the StableBaselines3 library as a selectable agent
