@@ -2,10 +2,10 @@
 
 ## Upcoming tasks
 
-### Improve the reward function for dqn
-- reward for dqn currently does not work for values really close to the target
-    - fix and evaluate
-    - try to beat or compare to pid agent
+### Introduce pytest as a testing framework
+- install and set up pytest
+- write a few tests for basic components and run them
+- (integrate the tests into an automatic CI/CI setup)
 
 ### Integrate other RL pipeline components
 - integrate the StableBaselines3 library as a selectable agent
@@ -36,3 +36,9 @@
 - adaption of LR and Epsilon are currently not used but instead decrease really slowly (really just a constant value)
     - fix and implement cleanly
     - evaluate effect of this change
+
+### Improve the reward function for dqn
+- reward for dqn currently does not work for values really close to the target
+    - fix and evaluate
+    - try to beat or compare to pid agent
+    
