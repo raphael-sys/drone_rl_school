@@ -12,6 +12,9 @@ import subprocess
 from torch.utils.tensorboard import SummaryWriter
 
 
+# NOTE: This function is currently not maintained, as training is now run from the run.ipynb.
+#       Use with caution and delete if not refactored and reintegrated in the workflow.
+
 def train(agent, env, writer, cfg,
         start_episode=0, best_score=float('-inf'),
         buffer=None, visualize=False, store_model=False):
