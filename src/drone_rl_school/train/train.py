@@ -46,14 +46,15 @@ def train(agent, env, writer, cfg,
             agent.decay_alpha(current_episode)
 
         # Log values
-        writer.add_scalar('metric', metrics[-1], current_episode)
-        writer.add_scalar('reward', rewards[-1], current_episode)
-        writer.add_scalar('epsilon', agent.epsilon, current_episode)
-        writer.add_scalar('alpha_median', np.median(agent.lr), current_episode)
-        writer.add_scalar('alpha_mean', np.mean(agent.lr), current_episode)
-        writer.add_scalar('alpha_min', np.min(agent.lr), current_episode)
-        writer.add_scalar('alpha_max', np.max(agent.lr), current_episode)
-        writer.add_scalar('alpha_sum', np.sum(agent.lr), current_episode)
+        if writer:
+            writer.add_scalar('metric', metrics[-1], current_episode)
+            writer.add_scalar('reward', rewards[-1], current_episode)
+            writer.add_scalar('epsilon', agent.epsilon, current_episode)
+            writer.add_scalar('alpha_median', np.median(agent.lr), current_episode)
+            writer.add_scalar('alpha_mean', np.mean(agent.lr), current_episode)
+            writer.add_scalar('alpha_min', np.min(agent.lr), current_episode)
+            writer.add_scalar('alpha_max', np.max(agent.lr), current_episode)
+            writer.add_scalar('alpha_sum', np.sum(agent.lr), current_episode)
 
         # Update target net (for dqn)
         if cfg.agent.type == 'dqn' and current_episode % cfg.agent.target_update_freq == 0:

@@ -1,34 +1,21 @@
+import hydra
 import pytest
 
 
-class AgentCfg:
-    # minimal dummy cfg for testing
-    class Agent:
-        layer_1_nodes = 16
-        layer_2_nodes = 8
-
-        buffer_capacity = 100
-        batch_size = 4
-
-        lr_start = 0.01
-        lr_min = 0.001
-        lr_decay = 0.9
-
-        epsilon_start = 1.0
-        epsilon_min = 0.1
-        epsilon_decay = 0.95
-
-        gamma = 0.99
-
-    agent = Agent()
-
 @pytest.fixture
-def cfg():
-    return AgentCfg()
+def cfg(request):
+    overrides = request.param if hasattr(request, "param") else []
+    if isinstance(overrides, str):
+        overrides = [overrides]
+
+    # Initialize Hydra and get the config
+    with hydra.initialize(config_path="../src/drone_rl_school/configs", version_base=None):
+        cfg = hydra.compose(config_name="config", overrides=overrides)
+    return cfg
 
 @pytest.fixture
 def small_replay(cfg):
-    from drone_rl_school.dqn import ReplayBuffer
+    from drone_rl_school.agents.dqn import ReplayBuffer
     buf = ReplayBuffer(cfg)
     # populate with some dummy transitions
     for _ in range(10):
