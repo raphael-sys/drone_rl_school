@@ -1,7 +1,7 @@
 import hydra
 from drone_rl_school.agents.dqn import DQNAgent, ReplayBuffer
 from drone_rl_school.agents.pid import PIDAgent
-from drone_rl_school.envs.point_mass_env import PointMassEnv
+from drone_rl_school.envs.drone_env.v0 import PointMassEnv
 from drone_rl_school.agents.q_learning import QLearningAgent
 import numpy as np
 import matplotlib.pyplot as plt
