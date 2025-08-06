@@ -5,7 +5,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 class PointMassEnv(gym.Env):
     metadata = {'render.modes': ['human']}
