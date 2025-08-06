@@ -1,5 +1,8 @@
 import numpy as np
 
+from drone_rl_school.registry import agent_registry
+
+__version__ = "0.1.0"
 
 class PIDAgent:
     def __init__(self, cfg):
@@ -32,4 +35,5 @@ class PIDAgent:
         action = idx * 2 + (1 if signals[idx] < 0 else 0)
 
         return action
-    
+
+agent_registry.register("pid_v0", "drone_rl_school.agents.pid.pid_v0:PIDAgent")
